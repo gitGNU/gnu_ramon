@@ -1,0 +1,151 @@
+==============================================================================
+                Installation Instructions for the RMON2 Agent
+------------------------------------------------------------------------------
+
+Software Requirements
+
+    To compile the RMON2 agent, you will need:
+
+	* GNU C Compiler (gcc), no version in special, but consider using
+	  a recent one (2.95.3 or newer).  The agent can be compiled on a
+	  gcc-3.2.3 with no problems.
+
+	* Make utillity, such as GNU Make (make).
+
+	* GNU Debugger (gdb), if available.
+
+	* Packet Capture library (0.7.1 or newer), which you can obtain at:
+	    http://www.tcpdump.org/
+
+	* Net-SNMP (5.0 and 5.1 series, others won't work), which you can obtain
+	  at:
+	    http://www.net-snmp.org/
+
+	* RMON2-MIB and TOKEN-RING-RMON-MIB files, available at:
+	http://www.simpleweb.org/ietf/mibs/modules/IETF/txt/RMON2-MIB
+	http://www.simpleweb.org/ietf/mibs/modules/IETF/txt/TOKEN-RING-RMON-MIB
+
+	* The RMON2 Agent source (which you already have) ;)
+
+	* Not exactly software, but you need superuser privileges to monitor
+	  networks.
+
+
+
+How to Install
+
+    0	First, ensure you have a Net-SNMP with dlmod support, or the RMON2 agent
+	will not be loaded, and you'll have to recompile Net-SNMP.  This is done
+	like follows:
+
+	    # snmpd -H
+
+	This will generate a long listing of supported tokens.  The bad news is
+	that you'll have to scroll through those lines searching for:
+
+	    dlmod                    module-name module-path
+
+
+    1	Compile it:
+
+	    $ cd ramon-<version>
+	    $ make
+
+    	In case of errors, please send the full output of the make process
+	to us so we can fix the errors and help you.  Contact information is
+	available in the README file, under 'Getting in Touch With Us'.
+
+	It is possible to get architeture-specific optimizations if you're using
+	gcc-3.x (or above) series by issuing:
+
+	    $ make arch=athlon-tbird
+
+	This instructs Make to include additional optimizations when compiling
+	the agent, in the example, enabling AMD Athlon Thunderbird processor
+	specific optimizations.  Why would you like to care about this?  Because
+	this can dramatically reduce CPU usage.  The hash function, for example,
+	can execute up to 4x (four times!) faster on an Athlon Thunderbird.
+
+	The magic consists in passing to gcc an additional parameter (-march),
+	which you inform when set `arch' to one of these values (extracted from
+	gcc man page):
+
+	    i386, i486, i586, i686, pentium, pentium-mmx, pentiumpro, pentium2,
+	    pentium3, pentium4, k6, k6-2, k6-3, athlon, athlon-tbird, athlon-4,
+	    athlon-xp, athlon-mp
+
+
+    2	Install it:
+
+	    $ su
+	    (your superuser password)
+	    # make install
+
+	In most cases, you wouldn't want to allow non-superuser users to
+	launch the agent.  If you *really* need to allow users to launch
+	the agent, then use this install method:
+
+	    # groupadd rmon2	(the group which will have permission)
+	    # make install.suid
+
+	Then change the supplementary group of the authorized users, adding
+	this new group 'rmon2'.  You can change the group by editing the
+	Makefile, and changing the value of the SUID_GRP variable.
+
+
+    3	Edit Net-SNMP snmpd.conf file:
+
+	Usually, the snmpd.conf file is located under /usr/local/share/snmp
+	or /usr/share/snmp.
+
+	Open it for editing with your preferred application and add the
+	following line to the end of the file:
+
+	    dlmod  rmon2 /usr/lib/rmon2.so
+
+	In the case you've modified the Makefile to change the default
+	installation directory, you need to supply the correct path to the
+	rmon2.so library.
+
+
+    4	Install MIB files:
+
+	Download the MIB files:
+	http://www.simpleweb.org/ietf/mibs/modules/IETF/txt/RMON2-MIB
+	http://www.simpleweb.org/ietf/mibs/modules/IETF/txt/TOKEN-RING-RMON-MIB
+
+	And copy them to Net-SNMP mibs directory, usually /usr/share/snmp/mibs
+	or /usr/local/share/snmp/mibs:
+
+	    # cp RMON2-MIB /usr/local/share/snmp/mibs/
+	    # cp TOKEN-RING-RMON /usr/local/share/snmp/mibs/
+
+
+    5	Launch Net-SNMP snmpd as usual:
+
+	Logged in as a privileged user (superuser or belonging to the
+	authorized group set in step 4), start snmpd, like follows:
+
+	    # snmpd
+
+	Please have a look at the snmpd log file, to check for any errors
+	that might had happened, usually under /var/log/snmpd.log:
+
+	    # cat /var/log/snmpd.log
+
+
+    6	Create some network traffic and request full RMON2 output:
+
+	If you use Net-SNMP command-line tools:
+
+	    $ export MIBS=+RMON2-MIB
+	    $ snmpwalk -c <your_community> <host_to_query> rmon
+
+	The exported shell environment variable instructs the tool to also
+	look at the RMON2-MIB file and thus provide readable textual output.
+
+	If an error occurs, please refer to ERRORS file for instructions.
+
+
+    7	Finished! :)
+

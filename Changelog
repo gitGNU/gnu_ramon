@@ -1,0 +1,52 @@
+2007-09-23	rnsanchez
+
+	* *: moving on to git repository.
+
+2007-07-30	rnsanchez
+
+	* Makefile: fixing bug #14278: not overwritting existing configuration
+	files anymore.
+
+2007-07-26	rnsanchez
+
+	* Makefile, configuracao.h, fila_cap.h, globals.h, pedb.h,
+	protocoldir.h, protocolDir.c, alhost.c, almatrix_DS.c, almatrix_SD.c,
+	conversor.c, nlhost.c, nlmatrix_DS.c, nlmatrix_SD.c, protocoldist.c,
+	rmon2_main.c: improving PTSL support handling (bug #20600).
+
+2005-09-06
+	* src/alhost.c, src/almatrix_DS.c, src/almatrix_SD.c, src/nlhost.c,
+	src/nlmatrix_DS.c, src/nlmatrix_SD.c, Makefile:
+		Removed unnecessary sysuptime.h #include.
+		Changed #if to #ifdef, and updated Makefile accordingly.
+
+2005-08-27
+	* module/protocolDir.c:
+		Fixed wrong condition causing null-pointer dereference, reported
+		by Glenn Elliott.
+
+2005-08-26
+	* src/protocoldir.c:
+		New parser (hopefully smarter) and new initialization function.
+
+2005-08-24
+	* Fixes for capturing under FreeBSD (working!).
+	* Makefile:
+		rmon2.conf was not being installed, reported by Glenn Elliott.
+
+2005-08-23
+	* Lots of files modified in order to build (and run) under FreeBSD-5.
+
+2005-05-20
+	* module/protocolDir.c:
+		missing servidor.h include, reported by Wen Jiang.
+
+2005-01-02
+    * A client application was created in order to test the server.
+
+
+2004-12-30
+    * Changelog created
+    * Server rewritten: it doesn't fetch PTSL files through HTTP anymore
+    * CVS tag: rmon2_0_3_0_pre9
+

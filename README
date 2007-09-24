@@ -1,0 +1,43 @@
+==============================================================================
+                            What is this software?
+------------------------------------------------------------------------------
+
+It is an extension to the Net-SNMP agent, providing statistics of high-layer
+network protocols, in conformance to the RMON2 MIB (Remote Network Monitoring
+Version 2 Management Information Base), standardized by the IETF (Internet
+Engineering Task Force) in 1997.  It is based on a previous work done by Lúcio
+Braga, finished in 2001 when he got his Masters degree in Computer Science.
+
+To do this, the RMON2 agent captures packets in the network with the help of
+packet capture library (libpcap), and then analyses the packet's headers in
+order to populate RMON2 MIB.
+
+
+Design Limitations:
+    * Able to decode only IPv4 over Ethernet packets, which use TCP or
+      UDP as the transport protocol
+    * Currently, SNMP SET operations are not handled
+
+Performance Limitations:
+    * Hosted on an 1.7GHz i686, it's expected to cope with network traffic
+      rate of about 52,000pps (packets per second), with average packet length
+      of 256 bytes.
+
+Althought the agent is capable of running in a shared environment (e.g, a
+'normal' multi-user station), it currently needs a good amount of CPU time.
+We are working hard to address these limitations, so the agent can be hosted
+on less powered stations, or really share resources of fast stations.
+
+
+==============================================================================
+                          Getting in Touch With Us
+------------------------------------------------------------------------------
+
+By the web:
+    http://www.nongnu.org/ramon/
+    http://savannah.nongnu.org/projects/ramon/
+
+By e-mail:
+    RMON2 Maintainer: errors, questions, patches, suggestions
+	Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
