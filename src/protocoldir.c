@@ -80,18 +80,18 @@ static pdir_node_t	*pdir_table[PDIR_TAM] = {NULL, };
  *	total_size = 65536 / (8 * sizeof(long))
  */
 #define WORDSIZE_BITS (sizeof(long) * 8)
-static unsigned long	pdir_bit_table[65536 / WORDSIZE_BITS] = {0UL, };
+static unsigned long	pdir_bit_table[65536 / WORDSIZE_BITS];
 
-static unsigned long	lastchange = 0;	    /* system uptime when last changed */
-static unsigned int		quantidade = 0;	    /* number of entries in the table */
-static unsigned int		profundidade = 0;   /* depth of the hash table */
+static unsigned long	lastchange;	    /* system uptime when last changed */
+static unsigned int	quantidade;	    /* number of entries in the table */
+static unsigned int	profundidade;   /* depth of the hash table */
 
-static char				error_color_string[] = "\033[1;41;37m";
-static char				reset_color_string[] = "\033[0m";
-static char				revision[] = "$Revivion$";
+static char		error_color_string[] = "\033[1;41;37m";
+static char		reset_color_string[] = "\033[0m";
+static char		revision[] = "$Revivion$";
 
 #ifdef PTSL
-static traco_t		*traco_novo_ptr = NULL;
+static traco_t		*traco_novo_ptr;
 #endif
 
 /* lista de índices */
