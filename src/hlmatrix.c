@@ -1,6 +1,6 @@
 /*
  * Ramon - A RMON2 Network Monitoring Agent
- * Copyright (C) 2003 Ricardo Nabinger Sanchez
+ * Copyright (C) 2003, 2008  Ricardo Nabinger Sanchez
  *
  * This file is part of Ramon, a network monitoring agent which implements
  * the MIB proposed in RFC-2021.
@@ -32,6 +32,7 @@
 
 #include "rowstatus.h"
 #include "hlmatrix.h"
+#include "log.h"
 
 #include "configuracao.h"
 #include "exit_codes.h"
@@ -64,8 +65,9 @@ int hlmatrix_insere(const unsigned int interface, char *owner)
 		if (tabela[interface].rowstatus != 0) {
 			/* a interface já foi ativada */
 #if DEBUG_HLMATRIX
-			fprintf(stderr, "hlmatrix: impossível ativar interface #%u (status=%d)\n",
-					interface, tabela[interface].rowstatus);
+			Debug("impossível ativar interface #%u (status=%d)",
+					interface,
+					tabela[interface].rowstatus);
 #endif
 			return ERROR_ISACTIVE;
 		}
@@ -74,14 +76,14 @@ int hlmatrix_insere(const unsigned int interface, char *owner)
 		tabela[interface].rowstatus = ROWSTATUS_ACTIVE;
 
 		if (lista_insere(interface) != SUCCESS) {
-			fprintf(stderr, "hlmatrix: erro ao tentar inserir interface %u na lista\n",
+			Debug("erro ao tentar inserir interface %u na lista",
 					interface);
 		}
 
 		quantidade++;
 
 #if DEBUG_HLMATRIX
-		fprintf(stderr, "hlmatrix: ativando interface #%u, owner='%s'\n",
+		Debug("ativando interface #%u, owner='%s'",
 				interface, owner);
 #endif
 		return SUCCESS;

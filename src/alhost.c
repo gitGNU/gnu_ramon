@@ -1,6 +1,6 @@
 /*
  * Ramon - A RMON2 Network Monitoring Agent
- * Copyright (C) 2003 Ricardo Nabinger Sanchez
+ * Copyright (C) 2003, 2008  Ricardo Nabinger Sanchez
  *
  * This file is part of Ramon, a network monitoring agent which implements
  * the MIB proposed in RFC-2021.
@@ -39,6 +39,7 @@
 #include "alhost.h"
 #include "hlhost.h"
 #include "exit_codes.h"
+#include "log.h"
 
 
 /* local defines */
@@ -50,8 +51,6 @@ static alhost_t	    *tabela_hash[ALHOST_TAM] = {NULL, };
 static unsigned int quantidade = 0;	    /* quantidade de entradas na tabela */
 static unsigned int profundidade = 0;	    /* maior profundidade (limite de busca) */
 
-static char	    urgent_color_string[] = "\033[1;41;37m";    // texto branco com fundo vermelho
-static char	    reset_color_string[] = "\033[0m";
 
 #define QUERO_PROXIMO	1
 #define	QUERO_PRIMEIRO	1
@@ -120,7 +119,7 @@ int alhost_insereAtualiza(pedb_t *dados)
 
 		if (indice_entrada != ALHOST_TAM) {
 #if DEBUG_ALHOST == 1
-			fprintf(stderr, "alhost[E]: atualizando (%u)\n", indice_entrada);
+			Debug("atualizando (%u)\n", indice_entrada);
 #endif
 			tabela_hash[indice_entrada]->in_pkts++;
 			tabela_hash[indice_entrada]->in_octets += dados->tamanho;
@@ -140,8 +139,8 @@ int alhost_insereAtualiza(pedb_t *dados)
 				HASH(chave_entrada, i, indice_entrada);
 			}
 			if (i >= ALHOST_MAX) {
-				fprintf(stderr, "%salhost[E]: tabela cheia (%u/%u) - descartando%s\n",
-						urgent_color_string, quantidade, ALHOST_MAX, reset_color_string);
+				Debug("tabela cheia (%u/%u) - descartando",
+						quantidade, ALHOST_MAX);
 				return ERROR_FULL;
 			}
 			if (i > profundidade) {
@@ -152,13 +151,12 @@ int alhost_insereAtualiza(pedb_t *dados)
 			tabela_hash[indice_entrada] = calloc(1, sizeof(alhost_t));
 #if PLEASE_CHECK_FOR_ERRORS == 1
 			if (tabela_hash[indice_entrada] == NULL) {
-				fprintf(stderr, "%salhost.c: Error in input entry memory allocation!%s\n",
-						urgent_color_string, reset_color_string);
+				Debug("Error in input entry memory allocation!");
 				return ERROR_MALLOC;
 			}
 #endif
 #if DEBUG_ALHOST == 1
-			fprintf(stderr, "alhost[E]: inserindo (%u)\n", indice_entrada);
+			Debug("inserindo (%u)", indice_entrada);
 #endif
 			tabela_hash[indice_entrada]->nlhost_address = dados->ip_dest;
 			tabela_hash[indice_entrada]->portas = portas;
@@ -181,13 +179,12 @@ int alhost_insereAtualiza(pedb_t *dados)
 
 			/* atualizar hlhost */
 			if (hlhost_atualizaAlInserts(dados->interface) != SUCCESS) {
-				fprintf(stderr, "%salhost: hlhost_atualizaAlInserts(%d) != SUCCESS%s\n",
-						urgent_color_string, dados->interface, reset_color_string);
+				Debug("hlhost_atualizaAlInserts(%d) falhou",
+						dados->interface);
 			}
 
 			if (lista_insere(indice_entrada) != SUCCESS) {
-				fprintf(stderr, "%salhost[entrada]: lista_insere() falhou%s\n",
-						urgent_color_string, reset_color_string);
+				Debug("lista_insere() falhou");
 			}
 			quantidade++;
 		}
@@ -197,7 +194,7 @@ int alhost_insereAtualiza(pedb_t *dados)
 	indice_saida = alhost_localiza(chave_saida, dados->ip_orig, portas);
 	if (indice_saida != ALHOST_TAM) {
 #if DEBUG_ALHOST == 1
-		fprintf(stderr, "alhost[S]: atualizando (%u)\n", indice_saida);
+		Debug("atualizando (%u)\n", indice_saida);
 #endif
 		tabela_hash[indice_saida]->out_pkts++;
 		tabela_hash[indice_saida]->out_octets += dados->tamanho;
@@ -216,8 +213,8 @@ int alhost_insereAtualiza(pedb_t *dados)
 			HASH(chave_saida, i, indice_saida);
 		}
 		if (i >= ALHOST_MAX) {
-			fprintf(stderr, "%salhost[S]: tabela cheia (%u/%u) - descartando%s\n",
-					urgent_color_string, quantidade, ALHOST_MAX, reset_color_string);
+			Debug("tabela cheia (%u/%u) - descartando",
+					quantidade, ALHOST_MAX);
 			return ERROR_FULL;
 		}
 		if (i > profundidade) {
@@ -228,13 +225,12 @@ int alhost_insereAtualiza(pedb_t *dados)
 		tabela_hash[indice_saida] = calloc(1, sizeof(alhost_t));
 #if PLEASE_CHECK_FOR_ERRORS == 1
 		if (tabela_hash[indice_saida] == NULL) {
-			fprintf(stderr, "%salhost.c: Error in output entry memory allocation!%s\n",
-					urgent_color_string, reset_color_string);
+			Debug("Error in output entry memory allocation!");
 			return ERROR_MALLOC;
 		}
 #endif
 #if DEBUG_ALHOST == 1
-		fprintf(stderr, "alhost[S]: inserindo (%u)\n", indice_saida);
+		Debug("inserindo (%u)", indice_saida);
 #endif
 		tabela_hash[indice_saida]->nlhost_address = dados->ip_orig;
 		tabela_hash[indice_saida]->portas = portas;
@@ -256,13 +252,12 @@ int alhost_insereAtualiza(pedb_t *dados)
 
 		/* atualiza hlhost */
 		if (hlhost_atualizaAlInserts(dados->interface) != SUCCESS) {
-			fprintf(stderr, "%salhost: hlhost_atualizaAlInserts(%d) != SUCCESS%s\n",
-					urgent_color_string, dados->interface, reset_color_string);
+			Debug("hlhost_atualizaAlInserts(%d) falhou",
+					dados->interface);
 		}
 
 		if (lista_insere(indice_saida) != SUCCESS) {
-			fprintf(stderr, "%salhost[saida]: lista_insere() falhou%s\n",
-					urgent_color_string, reset_color_string);
+			Debug("lista_insere() falhou");
 		}
 
 		quantidade++;

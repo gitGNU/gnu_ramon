@@ -1,6 +1,6 @@
 /*
  * Ramon - A RMON2 Network Monitoring Agent
- * Copyright (C) 2003 Ricardo Nabinger Sanchez
+ * Copyright (C) 2003, 2008  Ricardo Nabinger Sanchez
  *
  * This file is part of Ramon, a network monitoring agent which implements
  * the MIB proposed in RFC-2021.
@@ -48,6 +48,7 @@
 #include "sysuptime.h"
 
 #include "rowstatus.h"
+#include "log.h"
 
 /* local defines */
 #define PDISTSTATS_MAX	65536
@@ -58,9 +59,6 @@
 /* os vetores das tabelas */
 static pdistcontrol_t	*cntrl_table[PDISTCNTRL_TAM] = {NULL, };
 static pdist_stats_t	*stats_hashtable[PDISTSTATS_TAM] = {NULL, };
-
-static char             error_color_string[] = "\033[1;41;37m";
-static char             reset_color_string[] = "\033[0m";
 
 /* informações sobre as tabelas */
 static unsigned int	cntrl_quantidade = 0;
@@ -331,7 +329,7 @@ int pdist_control_remove(const unsigned int vitima)
 	cntrl_quantidade--;
 
 #if PDIST_DEBUG
-	fprintf(stderr, "protocolDist: 1 interface e %u entradas removidas\n", remocoes_stats);
+	Debug("1 interface e %u entradas removidas", remocoes_stats);
 #endif
 
 	return SUCCESS;
@@ -620,7 +618,7 @@ int protdist_stats_insereAtualiza(const unsigned int index_control,
 		/* entrada existente - atualizar apenas */
 
 #if PDIST_DEBUG
-		fprintf(stderr, "protdist_stats_insereAtualiza(%d, %d, %u, %u)[%u]: atualizando entradas\n",
+		Debug("(%d, %d, %u, %u)[%u]: atualizando entradas",
 				index_control, index_stats, pkts, octets, hash_index);
 #endif
 		stats_hashtable[hash_index]->pkts += pkts;
@@ -634,7 +632,7 @@ int protdist_stats_insereAtualiza(const unsigned int index_control,
 			HASH(chave, i, hash_index);
 
 #if PDIST_DEBUG
-			fprintf(stderr, "protdist_stats_insereAtualiza(%d, %d, %u, %u): entrada nova\n",
+			Debug("(%d, %d, %u, %u): entrada nova",
 					index_control, index_stats, pkts, octets);
 #endif
 
@@ -644,14 +642,14 @@ int protdist_stats_insereAtualiza(const unsigned int index_control,
 				HASH(chave, i, hash_index);
 			}
 			if (i >= PDISTSTATS_MAX) {
-				fprintf(stderr, "%sprotocolDist: could NOT add entry: (%u/%u)%s\n",
-						error_color_string, stats_quantidade, PDISTSTATS_TAM,
-						reset_color_string);
+				Debug("could NOT add entry: (%u/%u)",
+						stats_quantidade,
+						PDISTSTATS_TAM);
 				return ERROR_HASH;
 			}
 
 #if PDIST_DEBUG
-			fprintf(stderr, "alocando em %u\n", hash_index);
+			Debug("alocando em %u", hash_index);
 #endif
 
 			stats_hashtable[hash_index] = malloc(sizeof(pdist_stats_t));
@@ -672,18 +670,18 @@ int protdist_stats_insereAtualiza(const unsigned int index_control,
 
 			/* inserir o novo índice na lista de índices */
 			if (lista_insere(hash_index) != SUCCESS) {
-				fprintf(stderr, "protocolDist: lista_insere(%u, %u) falhou\n",
+				Debug("lista_insere(%u, %u) falhou",
 						chave, hash_index);
 			}
 
 #if PDIST_DEBUG
-			fprintf(stderr, "endereço alocado: %p\n", stats_hashtable[hash_index]);
+			Debug("endereço alocado: %p", stats_hashtable[hash_index]);
 #endif
 
 			return SUCCESS;
 		}
 		else {
-			fprintf(stderr, "protdist_stats_insereAtualiza(%d, %d, %u, %u): tabela cheia\n",
+			Debug("(%d, %d, %u, %u): tabela cheia",
 					index_control, index_stats, pkts, octets);
 			return ERROR_FULL;
 		}
@@ -744,13 +742,14 @@ int pdist_stats_tabela_testa(const unsigned int indice)
 
 void pdist_stats_tabela_debug()
 {
+	/* FIXME: definitely broken. */
 	while (lista_proximo() == SUCCESS) {
-		//	fprintf(stderr, "%u.%u > ",
+		//	Debug("%u.%u > ",
 		//		*stats_hashtable[lista_atual->indice]->control_index,
 		//		*stats_hashtable[lista_atual->indice]->protdir_index);
-		fprintf(stderr, "%u > ", lista_atual->indice);
+		Debug("%u > ", lista_atual->indice);
 	}
-	fprintf(stderr, "#\n");
+	Debug("#");
 }
 
 
@@ -789,7 +788,7 @@ int pdist_stats_remove_cascata(unsigned int pdir_index)
 	}
 
 #if PDIST_DEBUG
-	fprintf(stderr, "protocolDist: %u entrada(s) removida(s)\n", remocoes);
+	Debug("%u entrada(s) removida(s)", remocoes);
 #endif
 
 	return SUCCESS;

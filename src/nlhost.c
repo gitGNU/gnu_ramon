@@ -1,6 +1,6 @@
 /*
  * Ramon - A RMON2 Network Monitoring Agent
- * Copyright (C) 2003 Ricardo Nabinger Sanchez
+ * Copyright (C) 2003, 2008  Ricardo Nabinger Sanchez
  *
  * This file is part of Ramon, a network monitoring agent which implements
  * the MIB proposed in RFC-2021.
@@ -39,6 +39,7 @@
 #include "pedb.h"
 #include "hlhost.h"
 #include "nlhost.h"
+#include "log.h"
 
 
 /* these are needed only here */
@@ -49,9 +50,6 @@
 static nlhost_t	    *tabela_hash[NLHOST_TAM] = {NULL, };
 static unsigned int quantidade = 0;	// quantidade de entradas na tabela
 static unsigned int profundidade = 0;   // maior profundidade (limite de busca)
-
-static char	    urgent_color_string[] = "\033[1;41;37m"; // texto branco com fundo vermelho
-static char	    reset_color_string[]  = "\033[0m";
 
 
 #define QUERO_PROXIMO	1
@@ -113,7 +111,7 @@ int nlhost_insereAtualiza(pedb_t *dados)
 		/* atualizar/criar ENTRADA de pacotes */
 		if (indice_entrada != NLHOST_TAM) {
 #if DEBUG_NLHOST == 1
-			fprintf(stderr, "nlhost[entrada]: atualizando (%d)\n", indice_entrada);
+			Debug("atualizando (%d)", indice_entrada);
 #endif
 			tabela_hash[indice_entrada]->in_pkts++;
 			tabela_hash[indice_entrada]->in_octets += dados->tamanho;
@@ -125,7 +123,7 @@ int nlhost_insereAtualiza(pedb_t *dados)
 		else {
 			/* alocar uma posição na tabela */
 #if DEBUG_NLHOST == 1
-			fprintf(stderr, "nlhost[entrada]: inserindo nova (%d)\n", indice_entrada);
+			Debug("inserindo nova (%d)", indice_entrada);
 #endif
 			i = 0;
 			HASH(dados->ip_dest, i, indice_entrada);
@@ -135,8 +133,8 @@ int nlhost_insereAtualiza(pedb_t *dados)
 				HASH(dados->ip_dest, i, indice_entrada);
 			}
 			if (i >= NLHOST_MAX) {
-				fprintf(stderr, "%snlhost: tabela cheia (%u/%u) - descartando%s\n",
-						urgent_color_string, quantidade, NLHOST_MAX, reset_color_string);
+				Debug("tabela cheia (%u/%u) - descartando",
+						quantidade, NLHOST_MAX);
 				return ERROR_FULL;
 			}
 			if (i > profundidade) {
@@ -147,8 +145,7 @@ int nlhost_insereAtualiza(pedb_t *dados)
 			tabela_hash[indice_entrada] = calloc(1, sizeof(nlhost_t));
 #if PLEASE_CHECK_FOR_ERRORS == 1
 			if (tabela_hash[indice_entrada] == NULL) {
-				fprintf(stderr, "%snlhost.c: Error in hash entry memory allocation!%s\n", urgent_color_string,
-						reset_color_string);
+				Debug("Error in hash entry memory allocation!");
 				return ERROR_MALLOC;
 			}
 #endif
@@ -174,13 +171,12 @@ int nlhost_insereAtualiza(pedb_t *dados)
 
 			/* atualizar NlInserts na HlHost */
 			if (hlhost_atualizaNlInserts(dados->interface) != SUCCESS) {
-				fprintf(stderr, "%snlhost[entrada]: hlhost_atualizaNlInserts(%d) falhou%s\n",
-						urgent_color_string, dados->interface, reset_color_string);
+				Debug("hlhost_atualizaNlInserts(%d) falhou",
+						dados->interface);
 			}
 
 			if (lista_insere(indice_entrada) != SUCCESS) {
-				fprintf(stderr, "%snlhost[entrada]: lista_insere() falhou%s\n",
-						urgent_color_string, reset_color_string);
+				Debug("lista_insere() falhou");
 			}
 
 			quantidade++;
@@ -191,7 +187,7 @@ int nlhost_insereAtualiza(pedb_t *dados)
 	indice_saida = nlhost_localiza(dados->ip_orig);
 	if (indice_saida != NLHOST_TAM) {
 #if DEBUG_NLHOST == 1
-		fprintf(stderr, "nlhost[saida]: updating (%d)\n", indice_saida);
+		Debug("updating (%d)", indice_saida);
 #endif
 		tabela_hash[indice_saida]->out_pkts++;
 		tabela_hash[indice_saida]->out_octets += dados->tamanho;
@@ -206,7 +202,7 @@ int nlhost_insereAtualiza(pedb_t *dados)
 	else {
 		/* alocar uma posição na tabela */
 #if DEBUG_NLHOST == 1
-		fprintf(stderr, "nlhost[saida]: inserindo nova (%d)\n", indice_saida);
+		Debug("inserindo nova (%d)", indice_saida);
 #endif
 		i = 0;
 		HASH(dados->ip_orig, i, indice_saida);
@@ -216,8 +212,8 @@ int nlhost_insereAtualiza(pedb_t *dados)
 			HASH(dados->ip_orig, i, indice_saida);
 		}
 		if (i >= NLHOST_MAX) {
-			fprintf(stderr, "%snlhost.c: Table full (%u/%u) - discarding data%s\n",
-					urgent_color_string, quantidade, NLHOST_MAX, reset_color_string);
+			Debug("Table full (%u/%u) - discarding data",
+					quantidade, NLHOST_MAX);
 			return ERROR_FULL;
 		}
 		if (i > profundidade) {
@@ -228,8 +224,7 @@ int nlhost_insereAtualiza(pedb_t *dados)
 		tabela_hash[indice_saida] = calloc(1, sizeof(nlhost_t));
 #if PLEASE_CHECK_FOR_ERRORS == 1
 		if (tabela_hash[indice_saida] == NULL) {
-			fprintf(stderr, "%snlhost.c: Error in hash entry memory allocation!%s\n", urgent_color_string,
-					reset_color_string);
+			Debug("Error in hash entry memory allocation!%s\n");
 			return ERROR_MALLOC;
 		}
 #endif
@@ -260,13 +255,12 @@ int nlhost_insereAtualiza(pedb_t *dados)
 
 		/* atualizar NlInserts na HlHost */
 		if (hlhost_atualizaNlInserts(dados->interface) != SUCCESS) {
-			fprintf(stderr, "%snlhost[saída]: hlhost_atualizaNlInserts(%d) falhou%s\n",
-					urgent_color_string, dados->interface, reset_color_string);
+			Debug("hlhost_atualizaNlInserts(%d) falhou",
+					dados->interface);
 		}
 
 		if (lista_insere(indice_saida) != SUCCESS) {
-			fprintf(stderr, "%snlhost[saida]: lista_insere() falhou%s\n",
-					urgent_color_string, reset_color_string);
+			Debug("lista_insere() falhou");
 		}
 
 		quantidade++;
@@ -303,8 +297,7 @@ int nlhost_remove_pdir(const unsigned int pdir_localindex)
 
 void nlhost_hashStats()
 {
-	fprintf(stderr, "NlHost:\n   > Entradas: %d   Profundidade: %d\n",
-			quantidade, profundidade);
+	Debug("entradas: %d, profundidade: %d", quantidade, profundidade);
 }
 
 

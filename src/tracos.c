@@ -1,6 +1,7 @@
 /*
  * Ramon - A RMON2 Network Monitoring Agent
- * Copyright (C) 2004 Ricardo Nabinger Sanchez, Diego Wentz Antunes
+ * Copyright (C) 2004, 2008  Ricardo Nabinger Sanchez
+ * Copyright (C) 2004  Diego Wentz Antunes
  *
  * This file is part of Ramon, a network monitoring agent which implements
  * the MIB proposed in RFC-2021.
@@ -104,11 +105,6 @@ struct li_traco_s {
 static struct li_traco_s    *li_tracos_ini = NULL;
 static struct li_traco_s    *li_tracos_fim = NULL;
 static u_int		    li_tracos_qtd = 0;
-
-/** \brief Color string to used when displaying errors. */
-static char	    bug_color_str[] = "\033[1;41;37m";
-/** \brief Color-cancel string. */
-static char	    bug_nocolor_str[] = "\033[0m";
 
 
 /** \brief Character loop-copy internal function.
@@ -228,7 +224,7 @@ setup_table_paramenters:
 			}
 
 			/*XXX*/
-			//	    fprintf(stderr, "pend_inclui - %u/%u: SOURCE= %u:%u, DEST= %u:%u\n",
+			//	    Debug("pend_inclui - %u/%u: SOURCE= %u:%u, DEST= %u:%u",
 			//		nr_entradas, STATEFUL_MAX,
 			//		pedb->ip_orig, pedb->rede_sport,
 			//		pedb->ip_dest, pedb->rede_dport);
@@ -240,7 +236,7 @@ setup_table_paramenters:
 		if (nr_entradas < STATEFUL_MAX) {
 			HASH(chave, i, indice);
 			while ((tabela[indice].nr_inst) && (i < STATEFUL_MAX)) {
-				fprintf(stderr, "Colision level: %u \n", nr_colisoes);
+				Debug("Colision level: %u", nr_colisoes);
 				i++;
 				HASH(chave, i, indice);
 			}
@@ -302,7 +298,7 @@ pend_remove()
 		li_prev_ptr = li_atual_ptr;
 	}
 
-	//    fprintf(stderr, "  +--> removendo instancia %p\n", p);
+	//    Debug("  +--> removendo instancia %p", p);
 	free(p);
 	instancia_atual_ptr->nr_inst--;
 	nr_entradas--;
@@ -362,8 +358,7 @@ testa_mensagem(mensagem_t *msg_ptr)
 			case OPER_IGUAL:
 				switch (msg_ptr->flags.comparacao) {
 					case CMP_NENHUMA:
-						fprintf(stderr, "%stracos: comparisson type is none%s\n",
-								bug_color_str, bug_nocolor_str);
+						Debug("comparisson type is none");
 						return (ERROR_NEEDCODING);
 						break;
 
@@ -387,7 +382,7 @@ testa_mensagem(mensagem_t *msg_ptr)
 							}
 							i++;
 						}
-						//			fprintf(stderr, "mensagem `%s' encontrada\n", msg_ptr->ident);
+						//			Debug("mensagem `%s' encontrada", msg_ptr->ident);
 						return (SUCCESS);
 						break;
 
@@ -412,13 +407,11 @@ testa_mensagem(mensagem_t *msg_ptr)
 							}
 							i++;
 						}
-						//			fprintf(stderr, "mensagem `%s' encontrada\n", msg_ptr->ident);
+						//			Debug("mensagem `%s' encontrada", msg_ptr->ident);
 						break;
 
 					default:
-						fprintf(stderr,
-								"%stracos: testa_mensagem: unknown comparisson type `%u'%s\n",
-								bug_color_str, msg_ptr->flags.comparacao, bug_nocolor_str);
+						Debug("unknown comparisson type `%u'", msg_ptr->flags.comparacao);
 						return (ERROR_EVILVALUE);
 				}
 				break;
@@ -426,8 +419,7 @@ testa_mensagem(mensagem_t *msg_ptr)
 			case OPER_MAIOR:
 				switch (msg_ptr->flags.comparacao) {
 					case CMP_NENHUMA:
-						fprintf(stderr, "%stracos: comparisson type is none%s\n",
-								bug_color_str, bug_nocolor_str);
+						Debug("comparisson type is none");
 						return (ERROR_NEEDCODING);
 						break;
 
@@ -459,7 +451,7 @@ testa_mensagem(mensagem_t *msg_ptr)
 
 					default:
 						fprintf(stderr,
-								"%stracos: testa_mensagem: unknown comparisson type `%u'%s\n",
+								"%stracos: testa_mensagem: unknown comparisson type `%u'",
 								bug_color_str, msg_ptr->flags.comparacao, bug_nocolor_str);
 						return ERROR_EVILVALUE;
 				}
@@ -468,8 +460,7 @@ testa_mensagem(mensagem_t *msg_ptr)
 			case OPER_MAIORIGUAL:
 				switch (msg_ptr->flags.comparacao) {
 					case CMP_NENHUMA:
-						fprintf(stderr, "%stracos: comparisson type is none%s\n",
-								bug_color_str, bug_nocolor_str);
+						Debug("comparisson type is none");
 						return ERROR_NEEDCODING;
 						break;
 
@@ -501,7 +492,7 @@ testa_mensagem(mensagem_t *msg_ptr)
 
 					default:
 						fprintf(stderr,
-								"%stracos: testa_mensagem: unknown comparisson type `%u'%s\n",
+								"%stracos: testa_mensagem: unknown comparisson type `%u'",
 								bug_color_str, msg_ptr->flags.comparacao, bug_nocolor_str);
 						return ERROR_EVILVALUE;
 				}
@@ -510,8 +501,7 @@ testa_mensagem(mensagem_t *msg_ptr)
 			case OPER_MENOR:
 				switch (msg_ptr->flags.comparacao) {
 					case CMP_NENHUMA:
-						fprintf(stderr, "%stracos: comparisson type is none%s\n",
-								bug_color_str, bug_nocolor_str);
+						Debug("comparisson type is none");
 						return ERROR_NEEDCODING;
 						break;
 
@@ -543,7 +533,7 @@ testa_mensagem(mensagem_t *msg_ptr)
 
 					default:
 						fprintf(stderr,
-								"%stracos: testa_mensagem: unknown comparisson type `%u'%s\n",
+								"%stracos: testa_mensagem: unknown comparisson type `%u'",
 								bug_color_str, msg_ptr->flags.comparacao, bug_nocolor_str);
 						return ERROR_EVILVALUE;
 				}
@@ -552,8 +542,7 @@ testa_mensagem(mensagem_t *msg_ptr)
 			case OPER_MENORIGUAL:
 				switch (msg_ptr->flags.comparacao) {
 					case CMP_NENHUMA:
-						fprintf(stderr, "%stracos: comparisson type is none%s\n",
-								bug_color_str, bug_nocolor_str);
+						Debug("comparisson type is none");
 						return ERROR_NEEDCODING;
 						break;
 
@@ -585,7 +574,7 @@ testa_mensagem(mensagem_t *msg_ptr)
 
 					default:
 						fprintf(stderr,
-								"%stracos: testa_mensagem: unknown comparisson type `%u'%s\n",
+								"%stracos: testa_mensagem: unknown comparisson type `%u'",
 								bug_color_str, msg_ptr->flags.comparacao, bug_nocolor_str);
 						return ERROR_EVILVALUE;
 				}
@@ -594,8 +583,7 @@ testa_mensagem(mensagem_t *msg_ptr)
 			case OPER_DIFERENTE:
 				switch (msg_ptr->flags.comparacao) {
 					case CMP_NENHUMA:
-						fprintf(stderr, "%stracos: comparisson type is none%s\n",
-								bug_color_str, bug_nocolor_str);
+						Debug("comparisson type is none");
 						return ERROR_NEEDCODING;
 						break;
 
@@ -627,7 +615,7 @@ testa_mensagem(mensagem_t *msg_ptr)
 
 					default:
 						fprintf(stderr,
-								"%stracos: testa_mensagem: unknown comparisson type `%u'%s\n",
+								"%stracos: testa_mensagem: unknown comparisson type `%u'",
 								bug_color_str, msg_ptr->flags.comparacao, bug_nocolor_str);
 						return ERROR_EVILVALUE;
 				}
@@ -647,8 +635,8 @@ testa_mensagem(mensagem_t *msg_ptr)
 				break;
 
 			default:
-				fprintf(stderr, "%stracos: testa_mensagem(): unknown operation `%u'%s\n",
-						bug_color_str, msg_ptr->flags.operacao, bug_nocolor_str);
+				Debug("unknown operation `%u'",
+						msg_ptr->flags.operacao);
 				return ERROR_EVILVALUE;
 		}
 	}
@@ -660,7 +648,7 @@ testa_mensagem(mensagem_t *msg_ptr)
 		case OPER_IGUAL:
 			switch (msg_ptr->flags.comparacao) {
 			case CMP_CHAVEPTR_E_PACOTE:
-				//			    fprintf(stderr, "i: %u\t j: %u\t tam: %u\tchave: %s\n",
+				//			    Debug("i: %u\t j: %u\t tam: %u\tchave: ",
 				//				    msg_ptr->offset / 65536, msg_ptr->offset % 65536,
 				//				    msg_ptr->tam_chave, msg_ptr->chave_ptr);
 				/* FIXME: assumindo (e pulando) ether2.ipv4.tcp.APLIC */
@@ -679,7 +667,7 @@ testa_mensagem(mensagem_t *msg_ptr)
 				}
 				/*	Now we should be at the correct token -- compare it */
 				for (j = 0; j < msg_ptr->tam_chave; j++, i++) {
-					//				fprintf(stderr, "(%u[%c], %u[%c])\n", i, dados_ptr[i], j, msg_ptr->chave_ptr[j]);
+					//				Debug("(%u[%c], %u[%c])", i, dados_ptr[i], j, msg_ptr->chave_ptr[j]);
 					if (dados_ptr[i] != msg_ptr->chave_ptr[j]) {
 						return TRACE_MSGNOTFOUND;
 					}
@@ -714,8 +702,8 @@ testa_mensagem(mensagem_t *msg_ptr)
 				break;
 
 			default:
-				fprintf(stderr, "%stracos: testa_mensagem(): unknown operation `%u'%s\n",
-						bug_color_str, msg_ptr->flags.operacao, bug_nocolor_str);
+				Debug("unknown operation `%u'",
+						 msg_ptr->flags.operacao);
 				return ERROR_EVILVALUE;
 			}
 		}
@@ -888,7 +876,7 @@ tracos_check_remove_pend()
 	indice = i = 0;
 
 #if DEBUG
-	fprintf(stderr, "tracos_check_remove_pend(): Running with PID: %d\n", getpid());
+	Debug("Running with PID: %d", getpid());
 #endif
 
 	chave = pedb->rede_sport + pedb->rede_dport + pedb->ip_orig + pedb->ip_dest;
@@ -907,7 +895,7 @@ tracos_check_remove_pend()
 
 			if (statePtr->nr_depende == 1) {
 				if (testa_mensagem(statePtr->depende_0.mensagem) != SUCCESS) {
-					fprintf(stderr, "TRACE_MSGNOTFOUND\n");
+					Debug("TRACE_MSGNOTFOUND");
 				}
 
 				if (statePtr->depende_0.nr_msg_depende == 1) {
@@ -929,7 +917,7 @@ tracos_check_remove_pend()
 
 			if (statePtr->nr_depende == 2) {
 				if (testa_mensagem(statePtr->depende_1.mensagem) != SUCCESS) {
-					fprintf(stderr, "TRACE_MSGNOTFOUND\n");
+					Debug("TRACE_MSGNOTFOUND");
 				}
 
 				if (statePtr->depende_1.nr_msg_depende == 1) {
@@ -951,7 +939,7 @@ tracos_check_remove_pend()
 
 			if (statePtr->nr_depende == 3) {
 				if (testa_mensagem(statePtr->depende_2.mensagem) != SUCCESS) {
-					fprintf(stderr, "TRACE_MSGNOTFOUND\n");
+					Debug("TRACE_MSGNOTFOUND");
 				}
 
 				if (statePtr->depende_2.nr_msg_depende == 1) {
@@ -989,7 +977,7 @@ tracos_check_remove_pend()
 
 				if (statePtr->nr_depende == 1) {
 					if (testa_mensagem(statePtr->depende_0.mensagem) != SUCCESS) {
-						fprintf(stderr, "TRACE_MSGNOTFOUND\n");
+						Debug("TRACE_MSGNOTFOUND");
 					}
 
 					if (statePtr->depende_0.nr_msg_depende == 1) {
@@ -1011,7 +999,7 @@ tracos_check_remove_pend()
 
 				if (statePtr->nr_depende == 2) {
 					if (testa_mensagem(statePtr->depende_1.mensagem) != SUCCESS) {
-						fprintf(stderr, "TRACE_MSGNOTFOUND\n");
+						Debug("TRACE_MSGNOTFOUND");
 					}
 
 					if (statePtr->depende_1.nr_msg_depende == 1) {
@@ -1033,7 +1021,7 @@ tracos_check_remove_pend()
 
 				if (statePtr->nr_depende == 3) {
 					if (testa_mensagem(statePtr->depende_2.mensagem) != SUCCESS) {
-						fprintf(stderr, "TRACE_MSGNOTFOUND\n");
+						Debug("TRACE_MSGNOTFOUND");
 					}
 
 					if (statePtr->depende_2.nr_msg_depende == 1) {
@@ -1053,7 +1041,7 @@ tracos_check_remove_pend()
 					}
 				}
 			} else {
-				fprintf(stderr, "BUG VIOLENTOOOOO\n");
+				Debug("BUG VIOLENTOOOOO");
 			}
 		}
 	}
@@ -1205,7 +1193,7 @@ tracos_preenche_mensagem(mensagem_t *ptr, char *id_ptr, u_int tamanho_chave,
 		ptr->chave_mask_ptr = calloc(ptr->tam_chave, sizeof(char));
 		/*XXX Alguma verificacao de memoria?! */
 		/*    if (ptr->chave_ptr == NULL) {
-		 *	    fprintf(stderr, "Lets blow it all!\n");
+		 *	    Debug("Lets blow it all!");
 		 *	}
 		 */
 	}
@@ -1220,7 +1208,7 @@ tracos_preenche_mensagem(mensagem_t *ptr, char *id_ptr, u_int tamanho_chave,
 	ptr->chave_ptr = calloc(ptr->tam_chave, sizeof(char));
 	/*XXX Alguma verificacao de memoria?! */
 	/*    if (ptr->chave_ptr == NULL) {
-	 *	    fprintf(stderr, "Lets blow it all!\n");
+	 *	    Debug("Lets blow it all!");
 	 *	}
 	 */
 
@@ -1311,7 +1299,7 @@ tracos_preenche_estado(estado_t *ptr, char *id_ptr, u_int i_depende,
 		ptr->depende_2.msg_depende_5 = dep_ptr[2].msg_depende_5;
 	}
 	if (i_depende > 3) {
-		fprintf(stderr, "tracos: limite de 3 dependencias atingido.\n");
+		Debug("limite de 3 dependencias atingido.");
 	}
 
 	ptr->ident = id_ptr;
@@ -1330,13 +1318,13 @@ tracos_aloca_traco(descricao_t *descricao_ptr, u_int i_estados,
 	u_int	sz_nome, sz_vers, sz_desc, sz_pala;
 	u_int	sz_port, sz_cria, sz_atua, sz_refe;
 
-	fprintf(stderr, "id_num: %x\n", id_num);
+	Debug("id_num: %x", id_num);
 
 	ptr = calloc(1, sizeof(traco_t));
 
 	if (ptr == NULL) {
 		/* memory allocation error */
-		fprintf(stderr, "tracos.c: calloc falhou\n");
+		Debug("calloc falhou");
 		return NULL;
 	}
 
@@ -1359,7 +1347,7 @@ tracos_aloca_traco(descricao_t *descricao_ptr, u_int i_estados,
 		li_tracos_qtd++;
 	}
 	else {
-		fprintf(stderr, "tracos: calloc failed!\n");
+		Debug("calloc failed!");
 		return NULL;
 	}
 
@@ -1401,7 +1389,7 @@ tracos_aloca_traco(descricao_t *descricao_ptr, u_int i_estados,
 		chunck_ptr = calloc(1, (sz_nome + sz_vers + sz_desc + sz_pala +
 					sz_port + sz_cria + sz_atua + sz_refe + 8));
 		if (chunck_ptr == NULL) {
-			fprintf(stderr, "tracos.c: erro alocando memória (66211)\n");
+			Debug("erro alocando memória");
 			return NULL;
 		}
 		ptr->descricao = calloc(1, sizeof(descricao_t));
@@ -1467,9 +1455,9 @@ tracos_localiza_corrige_id(const u_int id)
 	struct li_traco_s	*ptr = li_tracos_ini;
 
 	/* FIXME */
-	fprintf(stderr, "     li_traco_s: %p\n", ptr);
+	Debug("     li_traco_s: %p", ptr);
 	while ((ptr != NULL) && (ptr->id != 0xdeadbeef)) {
-		//	fprintf(stderr, "     id: %u\n", ptr->id);
+		//	Debug("     id: %u", ptr->id);
 		ptr = ptr->prox_ptr;
 	}
 
@@ -1479,7 +1467,7 @@ tracos_localiza_corrige_id(const u_int id)
 	}
 	else {
 		/* FIXME */
-		fprintf(stderr, "0xdeadbeef nao encontrado\n");
+		Debug("0xdeadbeef nao encontrado");
 		return NULL;
 	}
 }
@@ -1496,8 +1484,7 @@ tracos_verifica(pedb_t *prepacote, u_char *area_dados_ptr)
 	   pthread_t	remove_pend_pth;
 
 	   if (pthread_create(&remove_pend_pth, NULL, tracos_check_remove_pend, NULL)) {
-	   fprintf(stderr, "%stracos.c: could not create check_remove_pend() thread%s\n",
-	   bug_color_str, bug_nocolor_str);
+	   Debug("could not create check_remove_pend() thread");
 	   abort();
 	   }
 	   */
@@ -1510,7 +1497,7 @@ tracos_verifica(pedb_t *prepacote, u_char *area_dados_ptr)
 	indice_atual = pend_busca();
 
 	/* FIXME */
-	//    fprintf(stderr, "indice: %u\t nr_inst: %u\n",
+	//    Debug("indice: %u\t nr_inst: %u",
 	//	    indice_atual == STATEFUL_TAM ? STATEFUL_TAM : indice_atual,
 	//	    indice_atual == STATEFUL_TAM ? 0 : tabela[indice_atual].nr_inst);
 
@@ -1521,15 +1508,15 @@ tracos_verifica(pedb_t *prepacote, u_char *area_dados_ptr)
 		li_prev_ptr = li_atual_ptr;
 		/* para remocao */
 
-		//	fprintf(stderr, "nó inicial: %p\n", tabela[indice_atual].li_primeiro);
+		//	Debug("nó inicial: %p", tabela[indice_atual].li_primeiro);
 
 		while (li_atual_ptr != NULL) {
-			//	    fprintf(stderr, "  +--> instancia %p\t\tant: %p\n", li_atual_ptr, li_prev_ptr);
+			//	    Debug("  +--> instancia %p\t\tant: %p", li_atual_ptr, li_prev_ptr);
 
 			/* check timeout, if there is one */
 			if ((li_atual_ptr->validade_ms) && (sysuptime_mili() > li_atual_ptr->validade_ms)) {
 				/* expired */
-				fprintf(stderr, "timeout: %u // %lu\n", li_atual_ptr->validade_ms, sysuptime_mili());
+				Debug("timeout: %u // %lu", li_atual_ptr->validade_ms, sysuptime_mili());
 				li_atual_ptr->traco_ptr->nr_falhas++;
 				pend_remove();
 				continue;
@@ -1547,10 +1534,10 @@ tracos_verifica(pedb_t *prepacote, u_char *area_dados_ptr)
 						ip = ntohl(pedb->ip_dest);
 						sprintf(str_ipdestino, "%u.%u.%u.%u", (ip >> 24) & 0xff,
 								(ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff);
-						fprintf(stderr, "Ocorrencia: %s (%u), %s -> %s\n",
+						Debug("Ocorrencia: %s (%u), %s -> %s\n",
 								li_atual_ptr->traco_ptr->ident, li_atual_ptr->traco_ptr->nr_sucessos,
 								str_iporigem, str_ipdestino);
-						//			fprintf(stderr, "tracos: ocorrência do traço `%s' detectada (total=%u)\n",
+						//			Debug("tracos: ocorrência do traço `%s' detectada (total=%u)",
 						//				li_atual_ptr->traco_ptr->descricao->descricao,
 						//				li_atual_ptr->traco_ptr->nr_sucessos);
 						pend_remove();
@@ -1562,7 +1549,7 @@ tracos_verifica(pedb_t *prepacote, u_char *area_dados_ptr)
 							li_atual_ptr->pendente_ptr->prox_estado;
 #if HUNT_BUGS
 						if (li_atual_ptr->pendente_ptr == NULL) {
-							fprintf(stderr, "%stracos: prox_estado == NULL%s\n",
+							Debug("prox_estado == NULL",
 									bug_color_str, bug_nocolor_str);
 						}
 #endif
@@ -1586,16 +1573,16 @@ tracos_verifica(pedb_t *prepacote, u_char *area_dados_ptr)
 	while (traco_atual_ptr != NULL) {
 		estado_pendente_ptr = &traco_atual_ptr->estados[0];
 		if (testa_estado() != SUCCESS) {
-			//	    fprintf(stderr, "R :(\n");
+			//	    Debug("R :(");
 		}
 		else {
-			//	    fprintf(stderr, "R :)\n");
+			//	    Debug("R :)");
 			if (estado_pendente_ptr->prox_estado == traco_atual_ptr->estado_final) {
 				/*
 				 *  trace has only one state -- account
 				 */
 				traco_atual_ptr->nr_sucessos++;
-				fprintf(stderr, "Ocorrencia: %s (%u)\n", traco_atual_ptr->ident,
+				Debug("Ocorrencia: %s (%u)", traco_atual_ptr->ident,
 						traco_atual_ptr->nr_sucessos);
 			}
 			else {
@@ -1603,8 +1590,7 @@ tracos_verifica(pedb_t *prepacote, u_char *area_dados_ptr)
 				 *  new instance of a multi-state trace
 				 */
 				if (traco_atual_ptr->estados[0].prox_estado == NULL) {
-					fprintf(stderr, "%stracos_verifica(): estado nulo!%s\n", bug_color_str,
-							bug_nocolor_str);
+					Debug("estado nulo!");
 					return TRACE_NULL_ERROR;
 				}
 				else {
@@ -1624,17 +1610,17 @@ tracos_verifica(pedb_t *prepacote, u_char *area_dados_ptr)
 	while (traco_atual_ptr != NULL) {
 		estado_pendente_ptr = &traco_atual_ptr->estados[0];
 		if (testa_estado() != SUCCESS) {
-			//	    fprintf(stderr, "T :(\n");
+			//	    Debug("T :(");
 		}
 		else {
-			//	    fprintf(stderr, "T :)\n");
+			//	    Debug("T :)");
 			if (estado_pendente_ptr->prox_estado == traco_atual_ptr->estado_final) {
 				/*
 				 *  trace has only one state -- account
 				 */
 				traco_atual_ptr->nr_sucessos++;
 #if HUNT_BUGS
-				fprintf(stderr, "Ocorrencia: %s (%u)\n", traco_atual_ptr->ident,
+				Debug("Ocorrencia: %s (%u)", traco_atual_ptr->ident,
 						traco_atual_ptr->nr_sucessos);
 #endif
 			}
@@ -1643,15 +1629,14 @@ tracos_verifica(pedb_t *prepacote, u_char *area_dados_ptr)
 				 *  new instance of a multi-state trace
 				 */
 				if (traco_atual_ptr->estados[0].prox_estado == NULL) {
-					fprintf(stderr, "%stracos_verifica(): estado nulo!%s\n", bug_color_str,
+					Debug("estado nulo!", bug_color_str,
 							bug_nocolor_str);
 					return TRACE_NULL_ERROR;
 				}
 				else {
 #if HUNT_BUGS
 					if (pend_inclui(traco_atual_ptr, estado_pendente_ptr->prox_estado, 30000) != SUCCESS) {
-						fprintf(stderr, "%spend_inclui() != SUCCESS%s\n", bug_color_str,
-								bug_nocolor_str);
+						Debug("pend_inclui() != SUCCESS");
 					}
 #else
 					pend_inclui(traco_atual_ptr, traco_atual_ptr->estados[0].prox_estado, 30000);
@@ -1670,15 +1655,15 @@ tracos_verifica(pedb_t *prepacote, u_char *area_dados_ptr)
 	while (traco_atual_ptr != NULL) {
 		estado_pendente_ptr = &traco_atual_ptr->estados[0];
 		if (testa_estado() != SUCCESS) {
-			//	    fprintf(stderr, "A :(\n");
+			//	    Debug("A :(");
 		}
 		else {
-			//	    fprintf(stderr, "A :)\n");
+			//	    Debug("A :)");
 			if (estado_pendente_ptr->prox_estado == traco_atual_ptr->estado_final) {
 				/*
 				 *  trace is complete - account
 				 */
-				fprintf(stderr, "Ocorrencia: %s (%u)\n", traco_atual_ptr->ident,
+				Debug("Ocorrencia: %s (%u)", traco_atual_ptr->ident,
 						traco_atual_ptr->nr_sucessos);
 				traco_atual_ptr->nr_sucessos++;
 			}
@@ -1687,13 +1672,12 @@ tracos_verifica(pedb_t *prepacote, u_char *area_dados_ptr)
 				 *  new instance of a multi-state trace
 				 */
 				if (traco_atual_ptr->estados[0].prox_estado == NULL) {
-					fprintf(stderr, "%stracos_verifica(): estado nulo!%s\n", bug_color_str,
-							bug_nocolor_str);
+					Debug("estado nulo!");
 					return TRACE_NULL_ERROR;
 				}
 				else {
 					//#if HUNT_BUGS
-					//		    fprintf(stderr, "vou incluir uma pendencia.\n");
+					//		    Debug("vou incluir uma pendencia.");
 					pend_inclui(traco_atual_ptr, traco_atual_ptr->estados[0].prox_estado, 30000);
 				}
 			}

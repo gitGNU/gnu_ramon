@@ -1,6 +1,6 @@
 /*
  * Ramon - A RMON2 Network Monitoring Agent
- * Copyright (C) 2004 Ricardo Nabinger Sanchez
+ * Copyright (C) 2004, 2008 Ricardo Nabinger Sanchez
  *
  * This file is part of Ramon, a network monitoring agent which implements
  * the MIB proposed in RFC-2021.
@@ -43,56 +43,45 @@
 #include "conversor.h"
 #include "protocoldir.h"
 #include "sysuptime.h"
+#include "log.h"
 
-static char error_color_string[] = "\033[1;41;37m";
-static char reset_color_string[] = "\033[0m";
 
 int main()
 {
 	pthread_t	captura;
+#if PTSL
 	pthread_t	servidor;
+#endif
 
 	if (init_sysuptime() != SUCCESS) {
-		fprintf(stderr, "%srmon2_main.c: error while initializing uptime accounting%s\n",
-				error_color_string, reset_color_string);
-		abort();
+		Fatal("error while initializing uptime accounting");
 	}
 
 	if (init_protocoldir(NULL) != SUCCESS) {
-		fprintf(stderr, "%srmon2_main.c: error while initializing protocolDir group%s\n",
-				error_color_string, reset_color_string);
-		abort();
+		Fatal("error while initializing protocolDir group");
 	}
 
 	if (conv_inicializa() != SUCCESS) {
-		fprintf(stderr, "%srmon2_main.c: error while initializing packet sniffer%s\n",
-				error_color_string, reset_color_string);
-		abort();
+		Fatal("error while initializing packet sniffer");
 	}
 
 	if (pthread_create(&captura, NULL, captura_processa_pacote, NULL) != 0) {
-		fprintf(stderr, "%srmon2_main.c: could not create packet sniffer thread%s\n",
-				error_color_string, reset_color_string);
-		abort();
+		Fatal("could not create packet sniffer thread");
 	}
 
 #if PTSL
 	if (pthread_create(&servidor, NULL, server_start, NULL)) {
-		fprintf(stderr, "%srmon2_main.c: could not create server thread%s\n",
-				error_color_string, reset_color_string);
-		abort();
+		Fatal("could not create server thread");
 	}
 #endif
 
-	/*
-	 *	It is not expected reaching here
-	 */
+	/* Lock on threads. */
 	pthread_join(captura, NULL);
+#if PTSL
 	pthread_join(servidor, NULL);
+#endif
 
-	fprintf(stderr, "%srmon2_main.c: unexpected KIA thread%s\n",
-			error_color_string, reset_color_string);
-
-	return -1;
+	Fatal("unexpected thread termination");
+	return 1;
 }
 

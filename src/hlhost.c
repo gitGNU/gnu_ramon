@@ -1,6 +1,6 @@
 /*
  * Ramon - A RMON2 Network Monitoring Agent
- * Copyright (C) 2003 Ricardo Nabinger Sanchez
+ * Copyright (C) 2003, 2008  Ricardo Nabinger Sanchez
  *
  * This file is part of Ramon, a network monitoring agent which implements
  * the MIB proposed in RFC-2021.
@@ -35,6 +35,7 @@
 
 #include "rowstatus.h"
 #include "hlhost.h"
+#include "log.h"
 
 
 /* local defines */
@@ -67,8 +68,9 @@ int hlhost_insere(const unsigned int interface, char *owner)
 		if (hlhost_tabela[interface].rowstatus != 0) {
 			/* a interface já foi ativada */
 #if DEBUG_HLHOST == 1
-			fprintf(stderr, "hlhost: impossível ativar interface #%u (status=%d)\n",
-					interface, hlhost_tabela[interface].rowstatus);
+			Debug("impossível ativar interface #%u (status=%d)\n",
+					interface,
+					hlhost_tabela[interface].rowstatus);
 #endif
 			return ERROR_ISACTIVE;
 		}
@@ -82,7 +84,7 @@ int hlhost_insere(const unsigned int interface, char *owner)
 		hlh_quantidade++;
 
 #if DEBUG_HLHOST == 1
-		fprintf(stderr, "hlhost: ativando interface #%d, owner='%s'\n",
+		Debug("ativando interface #%d, owner='%s'\n",
 				interface, owner);
 #endif
 

@@ -55,10 +55,6 @@ extern FILE *yyin;
 /*
  *  constants here
  */
-/** \brief ANSI color code for critical messages */
-static const char error_color_string[] = "\033[1;41;37m";
-/** \brief ANSI color code for color reset */
-static const char reset_color_string[] = "\033[0m";
 /** \brief Enumeration of server command types */
 enum en_server_commands {CMD_INSTALL, CMD_RUN, CMD_PAUSE, CMD_STOP, CMD_REMOVE};
 
@@ -98,8 +94,7 @@ server_start()
 	/* acquire socket */
 	socket_main = socket(AF_INET, SOCK_STREAM, 0);
 	if (socket_main == -1) {
-		fprintf(stderr, "%sserver: TCP socket() failed%s\n",
-				error_color_string, reset_color_string);
+		Debug("TCP socket() failed");
 		abort();
 	}
 
@@ -107,9 +102,9 @@ server_start()
 	buflen = 1;
 	if (setsockopt(socket_main, SOL_SOCKET, SO_REUSEADDR, &buflen, sizeof(buflen)) == -1) {
 #ifdef DEBUG_SERVER
-		fprintf(stderr, "server: not allowed to set SO_REUSEADDR, continuing anyway.\n");
+		Debug("not allowed to set SO_REUSEADDR, continuing anyway.");
 #endif
-		perror("server: setsockopt");
+		perror("setsockopt");
 	}
 
 	/* prepare binding */
@@ -118,18 +113,13 @@ server_start()
 	server_addr.sin_addr.s_addr = INADDR_ANY;
 	memset(server_addr.sin_zero, '\0', 8);
 
-	if (bind(socket_main, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
-		fprintf(stderr, "%sserver: TCP bind() failed%s\n",
-				error_color_string, reset_color_string);
-		abort();
-	}
+	if (bind(socket_main, (struct sockaddr *)&server_addr,
+				sizeof(server_addr)) == -1)
+		Fatal("TCP bind() failed");
 
 	/* ready to accept */
-	if (listen(socket_main, SERVER_QUEUE) == -1) {
-		fprintf(stderr, "%sserver: TCP listen() failed%s\n",
-				error_color_string, reset_color_string);
-		abort();
-	}
+	if (listen(socket_main, SERVER_QUEUE) == -1)
+		Debug("TCP listen() failed");
 
 	/* forever ... */
 	while (1) {
@@ -137,16 +127,14 @@ server_start()
 		client_addr_len = sizeof(client_addr);
 		socket_client = accept(socket_main, (struct sockaddr *)&client_addr, &client_addr_len);
 		if (socket_client == -1) {
-			fprintf(stderr, "%sserver: TCP accept() failed, shutting down client%s\n",
-					error_color_string, reset_color_string);
+			Debug("TCP accept() failed, shutting down client");
 			shutdown(socket_client, SHUT_RDWR);
 			continue;
 		}
 
 		buflen = recv(socket_client, buffer, sizeof(buffer), 0);
 		if (buflen == -1) {
-			fprintf(stderr, "%sserver: TCP recv() failed, shutting down client%s\n",
-					error_color_string, reset_color_string);
+			Debug("TCP recv() failed, shutting down client");
 			shutdown(socket_client, SHUT_RDWR);
 			continue;
 		}
@@ -157,13 +145,11 @@ server_start()
 		}
 		else {
 			buflen = sprintf(buffer, "ERROR");
-			fprintf(stderr, "%sserver: bad command, shutting down client%s\n",
-					error_color_string, reset_color_string);
+			Debug("bad command, shutting down client");
 		}
 
 		if (send(socket_client, buffer, buflen, 0) == -1) {
-			fprintf(stderr, "%sserver: TCP send() failed, shutting down client%s\n",
-					error_color_string, reset_color_string);
+			Debug("TCP send() failed, shutting down client");
 		}
 
 		shutdown(socket_client, SHUT_RDWR);
@@ -215,14 +201,13 @@ server_execute(int peer, char *command_string)
 
 			file = fopen(ptsl_id, "w+");
 			if (file == NULL) {
-				fprintf(stderr, "%sserver: error while creating file `%s'%s\n",
-						error_color_string, ptsl_id, reset_color_string);
+				Debug("error while creating file `%s'",
+						ptsl_id);
 			}
 
 			buflen = sprintf(local_buffer, "SEND PTSL");
 			if (send(peer, local_buffer, buflen, 0) == -1) {
-				fprintf(stderr, "%sserver: could not send to peer%s\n",
-						error_color_string, reset_color_string);
+				Debug("could not send to peer");
 				return ERROR_IO;
 			}
 
@@ -236,8 +221,7 @@ server_execute(int peer, char *command_string)
 				buflen = recv(peer, local_buffer, sizeof(local_buffer), 0);
 				if (buflen <= 0) {
 #ifdef DEBUG_SERVER
-					fprintf(stderr, "%sserver: error while receiving data%s\n",
-							error_color_string, reset_color_string);
+					Debug("error while receiving data");
 #endif
 					fclose(file);
 					return ERROR_IO;
@@ -257,14 +241,12 @@ server_execute(int peer, char *command_string)
 								return SUCCESS;
 							}
 #ifdef DEBUG_SERVER
-							fprintf(stderr, "%sserver: failed to fix ptsl_id:%d%s\n",
-									error_color_string, atoi(ptsl_id), reset_color_string);
+							Debug("failed to fix ptsl_id:%d", atoi(ptsl_id));
 #endif
 						}
 #ifdef DEBUG_SERVER
 						else {
-							fprintf(stderr, "%sserver: parser error%s\n",
-									error_color_string, reset_color_string);
+							Debug("parse error");
 						}
 #endif
 
@@ -280,37 +262,36 @@ server_execute(int peer, char *command_string)
 		case CMD_RUN:
 			if (pdir_traco_run(atoi(ptsl_id)) != SUCCESS) {
 #ifdef DEBUG_SERVER
-				fprintf(stderr, "server: failed to run ptsl_id:%d\n", atoi(ptsl_id));
+				Debug("failed to run ptsl_id:%d", atoi(ptsl_id));
 #endif
 				return ERROR_PARAMETER;
 			}
 #ifdef DEBUG_SERVER
 			else {
-				fprintf(stderr, "server: run ptsl_id:%d OK\n", atoi(ptsl_id));
+				Debug("run ptsl_id:%d OK", atoi(ptsl_id));
 			}
 #endif
 			return SUCCESS;
 			break;
 
 		case CMD_PAUSE:
-			fprintf(stderr, "server: PAUSE not implemented yet :(\n");
+			Debug("PAUSE not implemented yet :(");
 			return ERROR_NEEDCODING;
 			break;
 
 		case CMD_STOP:
-			fprintf(stderr, "server: STOP not implemented yet :(\n");
+			Debug("STOP not implemented yet :(");
 			return ERROR_NEEDCODING;
 			break;
 
 		case CMD_REMOVE:
-			fprintf(stderr, "server: REMOVE not implemented yet :(\n");
+			Debug("REMOVE not implemented yet :(");
 			return ERROR_NEEDCODING;
 			break;
 
 		default:
 #ifdef DEBUG_SERVER
-			fprintf(stderr, "%sserver: bad command `%s'%s\n", error_color_string,
-					command, reset_color_string);
+			Debug("bad command `%s'", command);
 #endif
 			return ERROR_PARAMETER;
 	}

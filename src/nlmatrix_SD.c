@@ -1,6 +1,6 @@
 /*
  * Ramon - A RMON2 Network Monitoring Agent
- * Copyright (C) 2003 Ricardo Nabinger Sanchez
+ * Copyright (C) 2003, 2008  Ricardo Nabinger Sanchez
  *
  * This file is part of Ramon, a network monitoring agent which implements
  * the MIB proposed in RFC-2021.
@@ -39,6 +39,7 @@
 #include "pedb.h"
 #include "hlmatrix.h"
 #include "nlmatrix_SD.h"
+#include "log.h"
 
 /* local defines */
 #define NLMATRIXSD_MAX	65536
@@ -47,9 +48,6 @@
 static unsigned int quantidade = 0;	// quantidade de entradas na tabela
 static unsigned int profundidade = 0;	// maior profundidade (limite de busca)
 static nlmatrix_t   *tabela_hash[NLMATRIXSD_TAM] = {NULL, };
-
-static char	    urgent_color_string[] = "\033[1;41;37m"; // texto branco com fundo vermelho
-static char	    reset_color_string[]  = "\033[0m";
 
 
 #define QUERO_PROXIMO   1
@@ -114,7 +112,7 @@ int nlmatrix_SD_insereAtualiza(pedb_t *dados)
 		/* atualizar/criar ENTRADA de pacotes */
 		if (indice_entrada < NLMATRIXSD_TAM) {
 #if DEBUG_NLMATRIX_SD == 1
-			fprintf(stderr, "nlmatrix_Sd[E]: atualizando (%d)\n", indice_entrada);
+			Debug("atualizando (%d)", indice_entrada);
 #endif
 			tabela_hash[indice_entrada]->pkts++;
 			tabela_hash[indice_entrada]->octets += dados->tamanho;
@@ -126,7 +124,7 @@ int nlmatrix_SD_insereAtualiza(pedb_t *dados)
 		else {
 			/* alocar uma posição na tabela */
 #if DEBUG_NLMATRIX_SD == 1
-			fprintf(stderr, "nlmatrix_Sd[E]: inserindo nova (%d)\n", indice_entrada);
+			Debug("inserindo nova (%d)", indice_entrada);
 #endif
 			i = 0;
 			HASH(dados->ip_dest, i, indice_entrada);
@@ -136,8 +134,7 @@ int nlmatrix_SD_insereAtualiza(pedb_t *dados)
 				HASH(dados->ip_dest, i, indice_entrada);
 			}
 			if (i >= NLMATRIXSD_MAX) {
-				fprintf(stderr, "%snlmatrix_Sd: tabela cheia - descartando%s\n",
-						urgent_color_string, reset_color_string);
+				Debug("tabela cheia - descartando");
 				return ERROR_FULL;
 			}
 			if (i > profundidade) {
@@ -148,8 +145,7 @@ int nlmatrix_SD_insereAtualiza(pedb_t *dados)
 			tabela_hash[indice_entrada] = malloc(sizeof(nlmatrix_t));
 #if PLEASE_CHECK_FOR_ERRORS == 1
 			if (tabela_hash[indice_entrada] == NULL) {
-				fprintf(stderr, "%snlmatrix_Sd: erro no malloc!%s\n",
-						urgent_color_string, reset_color_string);
+				Debug("erro no malloc!");
 				return ERROR_MALLOC;
 			}
 #endif
@@ -172,13 +168,12 @@ int nlmatrix_SD_insereAtualiza(pedb_t *dados)
 
 			/* atualizar NlInserts na HlHost */
 			if (hlmatrix_atualizaNlInserts(dados->interface) != SUCCESS) {
-				fprintf(stderr, "%snlmatrix_Sd[E]: hlmatrix_atualizaNlInserts(%d) falhou%s\n",
-						urgent_color_string, dados->interface, reset_color_string);
+				Debug("hlmatrix_atualizaNlInserts(%d) falhou",
+						dados->interface);
 			}
 
 			if (lista_insere(indice_entrada) != SUCCESS) {
-				fprintf(stderr, "%snlmatrix[E]_Sd: lista_insere() falhou%s\n",
-						urgent_color_string, reset_color_string);
+				Debug("lista_insere() falhou");
 			}
 
 			quantidade++;
@@ -190,7 +185,7 @@ int nlmatrix_SD_insereAtualiza(pedb_t *dados)
 	indice_saida = nlmatrix_SD_localiza(dados->ip_orig, dados->ip_dest);
 	if (indice_saida < NLMATRIXSD_TAM) {
 #if DEBUG_NLMATRIX_SD == 1
-		fprintf(stderr, "nlmatrix_Sd[s]: atualizando (%d)\n", indice_saida);
+		Debug("atualizando (%d)", indice_saida);
 #endif
 		tabela_hash[indice_saida]->pkts++;
 		tabela_hash[indice_saida]->octets += dados->tamanho;
@@ -202,7 +197,7 @@ int nlmatrix_SD_insereAtualiza(pedb_t *dados)
 	else {
 		/* alocar uma posição na tabela */
 #if DEBUG_NLMATRIX_SD == 1
-		fprintf(stderr, "nlmatrix_Sd[s]: inserindo nova (%d)\n", indice_saida);
+		Debug("inserindo nova (%d)", indice_saida);
 #endif
 		i = 0;
 		HASH(dados->ip_orig, i, indice_saida);
@@ -211,8 +206,7 @@ int nlmatrix_SD_insereAtualiza(pedb_t *dados)
 			HASH(dados->ip_orig, i, indice_saida);
 		}
 		if (i >= NLMATRIXSD_MAX) {
-			fprintf(stderr, "%snlmatrix_Sd: tabela cheia - descartando%s\n",
-					urgent_color_string, reset_color_string);
+			Debug("tabela cheia - descartando");
 			return ERROR_FULL;
 		}
 		if (i > profundidade) {
@@ -223,8 +217,7 @@ int nlmatrix_SD_insereAtualiza(pedb_t *dados)
 		tabela_hash[indice_saida] = malloc(sizeof(nlmatrix_t));
 #if PLEASE_CHECK_FOR_ERRORS == 1
 		if (tabela_hash[indice_saida] == NULL) {
-			fprintf(stderr, "%snlmatrix_Sd: erro no malloc!%s\n",
-					urgent_color_string, reset_color_string);
+			Debug("erro no malloc!");
 			return ERROR_MALLOC;
 		}
 #endif
@@ -247,13 +240,12 @@ int nlmatrix_SD_insereAtualiza(pedb_t *dados)
 
 		/* atualizar NlInserts na HlHost */
 		if (hlmatrix_atualizaNlInserts(dados->interface) != SUCCESS) {
-			fprintf(stderr, "%snlmatrix_Sd[s]: hlmatrix_atualizaNlInserts(%d) falhou%s\n",
-					urgent_color_string, dados->interface, reset_color_string);
+			Debug("hlmatrix_atualizaNlInserts(%d) falhou",
+					dados->interface);
 		}
 
 		if (lista_insere(indice_saida) != SUCCESS) {
-			fprintf(stderr, "%snlmatrix_Sd[s]: lista_insere() falhou%s\n",
-					urgent_color_string, reset_color_string);
+			Debug("lista_insere() falhou");
 		}
 
 		quantidade++;
@@ -266,8 +258,7 @@ int nlmatrix_SD_insereAtualiza(pedb_t *dados)
 
 void nlmatrix_SD_hashStats()
 {
-	fprintf(stderr, "NlHost:\n   > Entradas: %d   Profundidade: %d\n",
-			quantidade, profundidade);
+	Debug("entradas: %d, profundidade: %d", quantidade, profundidade);
 }
 
 

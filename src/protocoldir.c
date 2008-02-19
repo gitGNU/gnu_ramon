@@ -1,6 +1,7 @@
 /*
  * Ramon - A RMON2 Network Monitoring Agent
- * Copyright (C) 2003, 2004 Ricardo Nabinger Sanchez, Diego Wentz Antunes
+ * Copyright (C) 2003, 2004, 2008  Ricardo Nabinger Sanchez
+ * Copyright (C) 2003, 2004  Diego Wentz Antunes
  *
  * This file is part of Ramon, a network monitoring agent which implements
  * the MIB proposed in RFC-2021.
@@ -49,6 +50,7 @@
 
 #include "hlhost.h"
 #include "hlmatrix.h"
+#include "log.h"
 
 /* local defines */
 #define PDIR_TAM    5119	/* prime number, * 0.8 = PDIR_MAX */
@@ -85,10 +87,6 @@ static unsigned long	pdir_bit_table[65536 / WORDSIZE_BITS];
 static unsigned long	lastchange;	    /* system uptime when last changed */
 static unsigned int	quantidade;	    /* number of entries in the table */
 static unsigned int	profundidade;   /* depth of the hash table */
-
-static char		error_color_string[] = "\033[1;41;37m";
-static char		reset_color_string[] = "\033[0m";
-static char		revision[] = "$Revivion$";
 
 #ifdef PTSL
 static traco_t		*traco_novo_ptr;
@@ -248,7 +246,7 @@ init_protocoldir(char *filename)
 	FILE			*file_ptr;
 	pdir_node_t		*pdn_ptr;
 
-	fprintf(stderr, "initializing protocolDir (%s)\n", revision);
+	Debug("initializing protocolDir (%s)");
 
 	if (filename != NULL) {
 		file_ptr = fopen(filename, "r");
@@ -294,8 +292,8 @@ init_protocoldir(char *filename)
 			continue;
 		}
 		if ((token_ar[15] != NULL) && (token_ar[15][0] != '#')) {
-			fprintf(stderr, "%s:%d: warning, garbage after last field on line %u\n",
-					__FILE__, __LINE__, line);
+			Debug("warning, garbage after last field on line %u",
+					line);
 		}
 
 		/* after check for valid fields, starting with numbers */
@@ -306,13 +304,13 @@ init_protocoldir(char *filename)
 				!test_isnumber(token_ar[9]) || !test_isnumber(token_ar[10]) ||
 				!test_isnumber(token_ar[11]) || !test_isnumber(token_ar[12]) ||
 				!test_isnumber(token_ar[14])) {
-			fprintf(stderr, "%s:%d: discarding line %u (number test faile)\n",
-					__FILE__, __LINE__, line);
+			Debug("discarding line %u (number test faile)",
+					line);
 			continue;
 		}
 		if (!test_isstring(token_ar[8]) || !test_isstring(token_ar[13])) {
-			fprintf(stderr, "%s:%d: discarding line %u (control character found)\n",
-					__FILE__, __LINE__, line);
+			Debug("discarding line %u (control character found)",
+					line);
 			continue;
 		}
 
@@ -339,7 +337,7 @@ init_protocoldir(char *filename)
 		pdn_ptr->local_index	= contador;
 
 		if ((pdn_ptr->descricao == NULL) || (pdn_ptr->owner == NULL))
-			fprintf(stderr, "%s:%d: warning, short on memory\n", __FILE__, __LINE__);
+			Debug("warning, short on memory");
 
 		ret = protdir_insere(pdn_ptr);
 		if (ret != SUCCESS)
@@ -350,8 +348,8 @@ init_protocoldir(char *filename)
 	}
 
 	lastchange = sysuptime();
-	fprintf(stderr, "%s:%d: reporting %u entries, hash-table depth is %u\n",
-			__FILE__, __LINE__, quantidade, profundidade);
+	Debug("reporting %u entries, hash-table depth is %u",
+			quantidade, profundidade);
 
 #ifdef PTSL
 	if (pdir_tracos_init() != SUCCESS)
@@ -381,7 +379,7 @@ int protdir_init()
 	f_ptr = fopen(PDIR_CONF, "r");
 
 	if (f_ptr == NULL) {
-		fprintf(stderr, "protdir_init(): erro ao tentar abrir protocoldir.conf\n");
+		Debug("protdir_init(): erro ao tentar abrir protocoldir.conf");
 		return ERROR_IO;
 	}
 
@@ -456,7 +454,7 @@ int protdir_init()
 
 	lastchange = sysuptime();
 
-	fprintf(stderr, "protocolDir: reporting %u entries, hash-table depth is %u\n",
+	Debug("protocolDir: reporting %u entries, hash-table depth is %u",
 			quantidade, profundidade);
 
 #ifdef PTSL
@@ -476,13 +474,13 @@ void protdir_dumpTable()
 	FILE *fptr = fopen("/tmp/protocoldir.table", "w");
 
 	if (fptr == NULL) {
-		fprintf(stderr, "protdir_dumpTable: erro ao criar arquivo\n");
+		Debug("protdir_dumpTable: erro ao criar arquivo");
 		return;
 	}
 
 	for (i = 0; i < PDIR_TAM; i++) {
 		if (pdir_table[i] != NULL) {
-			fprintf(fptr, "[%d] = {%u, %u, %u, %u, %u, %u, %u, %u, %d, '%s', %u, %u, %u, %u, '%s', %u}\n",
+			fprintf(fptr, "[%d] = {%u, %u, %u, %u, %u, %u, %u, %u, %d, '%s', %u, %u, %u, %u, '%s', %u}",
 					i,
 					pdir_table[i]->idlink,
 					pdir_table[i]->idnet,
@@ -614,7 +612,7 @@ static int do_create_trace_oid_string(const unsigned int indice, traco_t *traco_
 			traco_ptr->descricao->pdir_name[9] = (idnum >> 8) & 0xff;
 			traco_ptr->descricao->pdir_name[10] = idnum & 0xff;
 			/* FIXME fprintf */
-			fprintf(stderr, "idtrans depois = %hhu\n", traco_ptr->descricao->pdir_name[10]);
+			Debug("idtrans depois = %hhu", traco_ptr->descricao->pdir_name[10]);
 
 		}
 	}
@@ -625,17 +623,6 @@ static int do_create_trace_oid_string(const unsigned int indice, traco_t *traco_
 		traco_ptr->descricao->pdir_name[5] = (idnum >> 8) & 0xff;
 		traco_ptr->descricao->pdir_name[6] = idnum & 0xff;
 	}
-
-#if HUNT_BUGS
-	fprintf(stderr, "protocolDir: new OID: %hhu. ", traco_ptr->descricao->pdir_name[0]);
-	for (i = 1; i < traco_ptr->descricao->pdir_name_len; i += 4) {
-		fprintf(stderr, "%hhu.%hhu.%hhu.%hhu ", traco_ptr->descricao->pdir_name[i],
-				traco_ptr->descricao->pdir_name[i + 1],
-				traco_ptr->descricao->pdir_name[i + 2],
-				traco_ptr->descricao->pdir_name[i + 3]);
-	}
-	fprintf(stderr, "\n");
-#endif
 
 	return SUCCESS;
 }
@@ -655,7 +642,7 @@ int protdir_insere(pdir_node_t *pdir_ptr)
 				pdir_ptr->idtrans, pdir_ptr->idapp);
 		if (indice_ptr != NULL) {
 			fprintf(stderr,
-					"pdir_insere: entrada {%u, %u, %u, %u} já existente, ignorando\n",
+					"pdir_insere: entrada {%u, %u, %u, %u} já existente, ignorando",
 					pdir_ptr->idlink, pdir_ptr->idnet, pdir_ptr->idtrans,
 					pdir_ptr->idapp);
 			return ERROR_ALREADYEXISTS;
@@ -692,9 +679,8 @@ int protdir_insere(pdir_node_t *pdir_ptr)
 		}
 		else {
 			/* WOW! existe espaço na tabela mas não foi encontrado */
-			fprintf(stderr, "%sprotocolDir: could NOT add entry (%u/%u)%s\n",
-					error_color_string, quantidade, PDIR_TAM,
-					reset_color_string);
+			Debug("could NOT add entry (%u/%u)",
+					quantidade, PDIR_TAM);
 			return ERROR_HASH;
 		}
 	}
@@ -721,15 +707,14 @@ int pdir_remove(const unsigned int e, const unsigned int r,
 				(alhost_remove_pdir(ptr->local_index) != SUCCESS) ||
 				(pdist_stats_remove_cascata(ptr->local_index) != SUCCESS)) {
 			/* OK, houve um erro, nada de pânico */
-			fprintf(stderr, "%sprotocolDir: erro na remoção em cascata%s\n",
-					error_color_string, reset_color_string);
+			Debug("erro na remoção em cascata");
 		}
 
 		/* remover da lista de índices */
 		/* FIXME!!! */
 		if (lista_remove_indice(indice) != SUCCESS) {
-			fprintf(stderr, "%sprotocolDir: índice %u não encontrado na lista%s\n",
-					error_color_string, indice, reset_color_string);
+			Debug("índice %u não encontrado na lista",
+					indice);
 		}
 
 		/* aritmética com ponteiros para descobrir o índice real */
@@ -1210,7 +1195,7 @@ int pdir_tabela_proximo(unsigned int *res)
 			return SUCCESS;
 		}
 		else {
-			fprintf(stderr, "protocolDir: NULL-pointer recebido\n");
+			Debug("NULL-pointer recebido");
 			return ERROR_INDEXLIST;
 		}
 	}
@@ -1274,7 +1259,7 @@ int pdir_traco_run(const unsigned int id_traco)
 {
 	traco_t *t_ptr;
 
-	fprintf(stderr, "protocoldir.c: procurando traço com ID %u\n", id_traco);
+	Debug("procurando traço com ID %u", id_traco);
 
 	t_ptr = tracos_localiza_por_id(id_traco);
 
@@ -1284,28 +1269,28 @@ int pdir_traco_run(const unsigned int id_traco)
 
 			if (pdir_table[t_ptr->pdir_index]->nr_tracos > 0) {
 				/* not the first */
-				fprintf(stderr, "protocoldir.c: inserindo traço no final\n");
+				Debug("inserindo traço no final");
 				pdir_table[t_ptr->pdir_index]->ultimo_traco->proximo_traco = t_ptr;
 				pdir_table[t_ptr->pdir_index]->ultimo_traco = t_ptr;
 				t_ptr->running = 1;
 			}
 			else {
 				/* first trace */
-				fprintf(stderr, "protocoldir.c: inserindo traço no inicio\n");
+				Debug("inserindo traço no inicio");
 				pdir_table[t_ptr->pdir_index]->primeiro_traco = t_ptr;
 				pdir_table[t_ptr->pdir_index]->ultimo_traco = t_ptr;
 				t_ptr->running = 1;
 			}
 
 			pdir_table[t_ptr->pdir_index]->nr_tracos++;
-			fprintf(stderr, "protocoldir.c: RUN %s [%u]\n",
+			Debug("RUN %s [%u]",
 					t_ptr->descricao->descricao, t_ptr->pdir_index);
 			return (SUCCESS);
 		} else {
 			return (ERROR_ALREADYEXISTS);
 		}
 	} else {
-		fprintf(stderr, " *** protocoldir.c: traço não encontrado\n");
+		Debug("traço não encontrado");
 	}
 
 	return (ERROR_NOSUCHENTRY);
@@ -1359,7 +1344,7 @@ pdir_traco_corrige_id(u_int idlink, u_int idnet, u_int idtrans, u_int idapp, u_i
 	pdir_hash_index = pdir_localiza_indice(idlink, idnet, idtrans, idapp);
 	t_ptr  = tracos_localiza_corrige_id(novo_id);
 
-	fprintf(stderr, "protocoldir.c: Corrigindo ID %u do traco com hash indice=%u :%p\n",
+	Debug("Corrigindo ID %u do traco com hash indice=%u :%p",
 			novo_id, pdir_hash_index, t_ptr);
 
 	if ((pdir_hash_index < PDIR_TAM) && (t_ptr != NULL)) {
@@ -1378,7 +1363,7 @@ traco_t *pdir_cria_traco(unsigned int idlink, unsigned int idnet, unsigned int i
 	traco_t	    *t_ptr;
 	unsigned int    ind;
 
-	fprintf(stderr, "protocoldir.c: criando traco %x\n", id);
+	Debug("criando traco %x", id);
 
 	/*
 	 *	find protocoldir entry
@@ -1393,7 +1378,7 @@ traco_t *pdir_cria_traco(unsigned int idlink, unsigned int idnet, unsigned int i
 	 */
 	t_ptr = tracos_aloca_traco(descr_ptr, nr_estados, nr_msgs, nr_vars, id);
 	if (t_ptr == NULL) {
-		fprintf(stderr, "protocoldir.c: tracos_aloca_traco() falhou\n");
+		Debug("tracos_aloca_traco() falhou");
 		return NULL;
 	}
 
@@ -1402,7 +1387,7 @@ traco_t *pdir_cria_traco(unsigned int idlink, unsigned int idnet, unsigned int i
 	 *	success!
 	 */
 	if (do_create_trace_oid_string(ind, t_ptr, id) != SUCCESS) {
-		fprintf(stderr, "protocoldir: error while creating OID string\n");
+		Debug("error while creating OID string");
 	}
 #endif
 
@@ -1417,7 +1402,7 @@ traco_t *pdir_cria_traco(unsigned int idlink, unsigned int idnet, unsigned int i
 	/*
 	 *	OK, now we are finished
 	 */
-	fprintf(stderr, "protocoldir.c: `%s' alocado [%x]\n", t_ptr->ident, ind);
+	Debug("`%s' alocado [%x]", t_ptr->ident, ind);
 	return t_ptr;
 }
 
