@@ -143,6 +143,7 @@ MODULE_OBJ	= $(MODULE_DIR)/rmon2.o \
 		  $(SRC_DIR)/almatrix_SD.o \
 		  $(SRC_DIR)/hlhost.o \
 		  $(SRC_DIR)/hlmatrix.o \
+                  $(SRC_DIR)/log.o \
                   $(SRC_DIR)/nlhost.o \
 		  $(SRC_DIR)/nlmatrix_DS.o \
 		  $(SRC_DIR)/nlmatrix_SD.o \
@@ -157,6 +158,7 @@ APP_OBJECTS	= $(SRC_DIR)/alhost.o \
                   $(SRC_DIR)/almatrix_DS.o \
                   $(SRC_DIR)/hlhost.o \
                   $(SRC_DIR)/hlmatrix.o \
+                  $(SRC_DIR)/log.o \
                   $(SRC_DIR)/nlhost.o \
                   $(SRC_DIR)/nlmatrix_SD.o \
                   $(SRC_DIR)/nlmatrix_DS.o \
@@ -275,8 +277,8 @@ $(SRC_DIR)/trasserl.o: $(SRC_DIR)/trasser.l
 app: dep_pcap client $(APP_OBJECTS) $(TRASSER_OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $(SRC_DIR)/rmon2 $(APP_OBJECTS) $(TRASSER_OBJ) $(APP_LIBS)
 
-client: $(SRC_DIR)/client.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $(SRC_DIR)/client $(SRC_DIR)/client.o
+client: $(SRC_DIR)/client.o $(SRC_DIR)/log.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $(SRC_DIR)/client $(SRC_DIR)/client.o $(SRC_DIR)/log.o
 
 # Simple rule to generate the (somewhat outdated) documentation
 doc:

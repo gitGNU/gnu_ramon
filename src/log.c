@@ -21,14 +21,34 @@
  *
  * $Id$
  */
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#ifndef __LOG_H__
-#define __LOG_H__
+#include "log.h"
 
-void debug(const char *, ...);
-void fatal(const char *, ...);
 
-#define Debug(...) debug(__VA_ARGS__)
-#define Fatal(...) fatal(__VA_ARGS__)
+void
+debug(const char *str, ...)
+{
+	char	buffer[1024];
+	va_list	varargs;
 
-#endif	/* __LOG_H__ */
+	snprintf(buffer, sizeof(buffer), "ramon: %s\n", str);
+	va_start(varargs, str);
+	fprintf(stderr, buffer, varargs);
+	va_end(varargs);
+}
+
+
+void
+fatal(const char *str, ...)
+{
+	va_list varargs;
+
+	va_start(varargs, str);
+	debug(str, varargs);
+	va_end(varargs);
+
+	abort();
+}
