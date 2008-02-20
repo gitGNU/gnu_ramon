@@ -1,6 +1,7 @@
 /*
  * Ramon - A RMON2 Network Monitoring Agent
- * Copyright (C) 2004 Ricardo Nabinger Sanchez, Diego Wentz Antunes
+ * Copyright (C) 2004, 2008  Ricardo Nabinger Sanchez
+ * Copyright (C) 2004  Diego Wentz Antunes
  *
  * This file is part of Ramon, a network monitoring agent which implements
  * the MIB proposed in RFC-2021.
@@ -33,16 +34,13 @@
 #include <netdb.h>
 
 #include "globals.h"
+#include "log.h"
 //#include "debug.h"
 
 
 /*
  *  constants here
  */
-/** \brief ANSI color code for critical messages */
-static const char error_color_string[] = "\033[1;41;37m";
-/** \brief ANSI color code for color reset */
-static const char reset_color_string[] = "\033[0m";
 /** \brief Enumeration of server command types */
 enum en_server_commands {CMD_INSTALL, CMD_RUN, CMD_PAUSE, CMD_STOP, CMD_REMOVE, CMD_WRONG};
 
@@ -57,12 +55,12 @@ static void print_usage();
 int
 main(int argc, char *argv[])
 {
-	char		buffer[1024];
+	char			buffer[1024];
 	struct sockaddr_in	server_addr;
 	int			buflen;
 	int			socket_tcp;
-	unsigned int	blocks = 0;
-	FILE		*file;
+	unsigned int		blocks = 0;
+	FILE			*file;
 
 	if (argc < 2) {
 		print_usage();
@@ -72,7 +70,7 @@ main(int argc, char *argv[])
 	/* acquire socket */
 	socket_tcp = socket(AF_INET, SOCK_STREAM, 0);
 	if (socket_tcp == -1) {
-		perror("client");
+		perror("socket");
 		abort();
 	}
 
@@ -82,8 +80,9 @@ main(int argc, char *argv[])
 	memset(server_addr.sin_zero, '\0', 8);
 
 	/* connect to server */
-	if (connect(socket_tcp, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
-		perror("client");
+	if (connect(socket_tcp, (struct sockaddr *)&server_addr,
+				sizeof(server_addr)) == -1) {
+		perror("connect");
 		abort();
 	}
 
@@ -91,7 +90,7 @@ main(int argc, char *argv[])
 		case CMD_INSTALL:
 			/* check arguments count */
 			if (argc != 7) {
-				fprintf(stderr, "client: not enough parameters to `install' command\n\n");
+				Debug("too few parameters to `install' command");
 				print_usage();
 				return 127;
 			}
@@ -99,16 +98,17 @@ main(int argc, char *argv[])
 			/* open PTSL file */
 			file = fopen(argv[2], "r");
 			if (file == NULL) {
-				fprintf(stderr, "client: could not open file `%s'\n", argv[2]);
-				perror("client");
+				Debug("could not open file `%s'\n", argv[2]);
+				perror("fopen");
 				abort();
 			}
 
 			/* format and send command */
-			buflen = sprintf(buffer, "%s#%s#%s#%s#%s#", argv[1], argv[3], argv[4], argv[5], argv[6]);
+			buflen = sprintf(buffer, "%s#%s#%s#%s#%s#", argv[1],
+					argv[3], argv[4], argv[5], argv[6]);
 			if (send(socket_tcp, buffer, buflen, 0) == -1) {
-				fprintf(stderr, "client: `%s' failed\n", argv[1]);
-				perror("client");
+				Debug("`%s' failed\n", argv[1]);
+				perror("send");
 				abort();
 			}
 
@@ -117,58 +117,52 @@ main(int argc, char *argv[])
 
 			/* wait for server response */
 			if (recv(socket_tcp, buffer, sizeof(buffer), 0) == -1) {
-				perror("client");
+				perror("recv");
 				abort();
 			}
 
 			/* check it */
-			if (strcasecmp(buffer, "SEND PTSL") != 0) {
-				fprintf(stderr, "client: `%s' failed\n", argv[1]);
-				abort();
-			}
+			if (strcasecmp(buffer, "SEND PTSL") != 0)
+				Fatal("`%s' failed\n", argv[1]);
+
 
 			/* send the file */
 			buflen = fread(buffer, 1, sizeof(buffer), file);
 			if (buflen == -1) {
-				fprintf(stderr, "client: error while reading from file\n");
-				perror("client");
+				Debug("error while reading from file");
+				perror("fread");
 				return 126;
 			}
 
 			while (buflen > 0) {
-				if (send(socket_tcp, buffer, buflen, 0) == -1) {
-					fprintf(stderr, "client: error while sending block #%u\n", blocks);
-					fclose(file);
-					abort();
-				}
+				if (send(socket_tcp, buffer, buflen, 0) == -1)
+					Fatal("error while sending block %u\n",
+							blocks);
 				buflen = fread(buffer, 1, sizeof(buffer), file);
 				blocks++;
 			}
 
 			/* send end-of-file alert */
 			buflen = sprintf(buffer, "END.");
-			if (send(socket_tcp, buffer, buflen, 0) == -1) {
-				fprintf(stderr, "client: error while sending `END.' message\n");
-				abort();
-			}
+			if (send(socket_tcp, buffer, buflen, 0) == -1)
+				Fatal("error while sending `END.' message");
 
 			/* make room for expected message */
 			memset(buffer, '\0', sizeof("OK_"));
 
 			/* wait for server response */
 			if (recv(socket_tcp, buffer, sizeof(buffer), 0) == -1) {
-				perror("client");
+				perror("recv");
 				abort();
 			}
 
 			/* check it */
 			if (strcasecmp(buffer, "OK") == 0) {
-				fprintf(stdout, "client: `%s %s as ptsl_id:%s' suceeded\n", argv[1], argv[2], argv[3]);
+				Debug("`%s %s as ptsl_id:%s' suceeded", argv[1],
+						argv[2], argv[3]);
 			}
-			else {
-				fprintf(stderr, "client: `%s' failed\n", argv[1]);
-				abort();
-			}
+			else
+				Fatal("`%s' failed", argv[1]);
 
 			break;
 
@@ -181,19 +175,18 @@ main(int argc, char *argv[])
 		case CMD_REMOVE:
 			buflen = sprintf(buffer, "%s#%s#", argv[1], argv[2]);
 			if (send(socket_tcp, buffer, buflen, 0) == -1) {
-				fprintf(stderr, "client: `%s %s' failed\n", argv[1], argv[2]);
-				perror("client");
+				Debug("`%s %s' failed", argv[1], argv[2]);
+				perror("send");
 				abort();
 			}
 
 			if (recv(socket_tcp, buffer, sizeof(buffer), 0) == -1) {
-				perror("client");
+				perror("recv");
 				abort();
 			}
 
-			if (strcasecmp(buffer, "OK") == 0) {
-				fprintf(stdout, "client: `%s %s' suceeded\n", argv[1], argv[2]);
-			}
+			if (strcasecmp(buffer, "OK") == 0)
+				Debug("`%s %s' suceeded", argv[1], argv[2]);
 			break;
 
 		default:
@@ -251,7 +244,7 @@ static void
 print_usage()
 {
 	fprintf(stderr, "client: not enough parameters\n\n"
-			"  client install <PTSL file> ptsl_id 'owner string' 'language string' 'description string'\n"
+			"  client install <PTSL file> ptsl_id 'owner string'"
+			"	'language string' 'description string'\n"
 			"  client run|pause|stop|remove ptsl_id\n");
 }
-
