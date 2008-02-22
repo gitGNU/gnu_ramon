@@ -27,14 +27,13 @@
 
 #include "log.h"
 
-
 void
-debug(const char *str, ...)
+debug(const char *file, const int line, const char *str, ...)
 {
 	char	buffer[1024];
 	va_list	varargs;
 
-	snprintf(buffer, sizeof(buffer), "ramon: %s\n", str);
+	snprintf(buffer, sizeof(buffer), "ramon (%s:%d): %s\n", file, line, str);
 	va_start(varargs, str);
 	fprintf(stderr, buffer, varargs);
 	va_end(varargs);
@@ -42,12 +41,12 @@ debug(const char *str, ...)
 
 
 void
-fatal(const char *str, ...)
+fatal(const char *file, const int line, const char *str, ...)
 {
 	va_list varargs;
 
 	va_start(varargs, str);
-	debug(str, varargs);
+	debug(file, line, str, varargs);
 	va_end(varargs);
 
 	abort();

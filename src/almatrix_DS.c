@@ -47,9 +47,9 @@
 #define ALMATRIXDS_TAM	PRIMO
 
 
-static almatrix_t   *tabela_hash[ALMATRIXDS_TAM] = {NULL, };
-static unsigned int quantidade = 0;	// quantidade de entradas na tabela
-static unsigned int profundidade = 0;	// maior profundidade (limite de busca)
+static almatrix_t   *tabela_hash[ALMATRIXDS_TAM];
+static unsigned int quantidade;
+static unsigned int profundidade;
 
 
 #define	QUERO_PRIMEIRO	1

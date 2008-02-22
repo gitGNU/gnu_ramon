@@ -43,8 +43,8 @@
 
 
 /* tabela pré-inicializada com tudo zerado */
-static hlhost_t	    hlhost_tabela[HLHOST_TAM] = {{0, }, };
-static unsigned int hlh_quantidade = 0;
+static hlhost_t	    hlhost_tabela[HLHOST_TAM];
+static unsigned int hlh_quantidade;
 
 
 /* lista de indices */

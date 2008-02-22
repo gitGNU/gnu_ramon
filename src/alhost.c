@@ -47,9 +47,9 @@
 #define ALHOST_TAM  PRIMO
 
 
-static alhost_t	    *tabela_hash[ALHOST_TAM] = {NULL, };
-static unsigned int quantidade = 0;	    /* quantidade de entradas na tabela */
-static unsigned int profundidade = 0;	    /* maior profundidade (limite de busca) */
+static alhost_t	    *tabela_hash[ALHOST_TAM];
+static unsigned int quantidade;
+static unsigned int profundidade;
 
 
 #define QUERO_PROXIMO	1

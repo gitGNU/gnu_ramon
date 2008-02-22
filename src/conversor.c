@@ -1,6 +1,7 @@
 /*
  * Ramon - A RMON2 Network Monitoring Agent
- * Copyright (C) 2003, 2004 Ricardo Nabinger Sanchez, Diego Wentz Antunes
+ * Copyright (C) 2003, 2004, 2008  Ricardo Nabinger Sanchez
+ * Copyright (C) 2003, 2004  Diego Wentz Antunes
  *
  * This file is part of Ramon, a network monitoring agent which implements
  * the MIB proposed in RFC-2021.
@@ -104,13 +105,10 @@
 #include "almatrix_SD.h"
 #include "almatrix_DS.h"
 #include "settings.h"
+#include "log.h"
 
 #include "fila_cap.h"
 
-
-/* colorir mensagens graves no terminal */
-static char error_color_string[] = "\033[1;41;37m";
-static char reset_color_string[] = "\033[0m";
 
 static char *dev;
 
@@ -122,18 +120,18 @@ static char owner[] = "monitor";
 /*****************************************************************************
   Fila de pacotes
  ****************************************************************************/
-static fila_t		fila[FILA_MAX] = {{0, {0,}},};   /* o vetor de pacotes */
+static fila_t		fila[FILA_MAX];   /* o vetor de pacotes */
 
 static pthread_mutex_t	fila_pthmutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t	thr_captura;
 static sem_t		fila_semaforo;		/* semáforo para proteger fila_tam */
 
 
-static uint32_t    	fila_tam = 0;		/* tamanho da fila (crítico) */
-static uint32_t    	fila_descartes = 0;	/* pacotes descartados */
-static uint32_t    	fila_inseridos = 0;	/* pacotes inseridos na fila */
-static unsigned int	fila_cabeca = 0;	/* índice da cabeça da fila */
-static unsigned int	fila_fim = 0;		/* índice do final da fila */
+static uint32_t    	fila_tam;		/* tamanho da fila (crítico) */
+static uint32_t    	fila_descartes;		/* pacotes descartados */
+static uint32_t    	fila_inseridos;		/* pacotes inseridos na fila */
+static unsigned int	fila_cabeca;		/* índice da cabeça da fila */
+static unsigned int	fila_fim;		/* índice do final da fila */
 
 
 #if FILA_DEBUG
@@ -143,8 +141,9 @@ static void fila_info()
 	static int semvalue;
 
 	sem_getvalue(&fila_semaforo, &semvalue);
-	fprintf(stderr, "  fila: [%u], inicio: %u, fim: %u, inserções: %u, descartes: %u, semaforo: %d\n",
-			fila_tam, fila_cabeca, fila_fim, fila_inseridos, fila_descartes, semvalue);
+	Debug("  fila: [%u], inicio: %u, fim: %u, inserções: %u, descartes: %u,"
+		       " semaforo: %d", fila_tam, fila_cabeca, fila_fim,
+		       fila_inseridos, fila_descartes, semvalue);
 }
 #endif
 
@@ -155,33 +154,30 @@ static void fila_info()
  */
 static void *fila_coleta()
 {
-	char		erro_pcap_string[PCAP_ERRBUF_SIZE] = {'\0',};
+	char			erro_pcap_string[PCAP_ERRBUF_SIZE] = {'\0',};
 	struct pcap_pkthdr	header;
 
 #ifdef __linux__
 	struct sched_param	schedparams;
-	int					policy;
+	int			policy;
 #endif
 
 	const u_char	*data_ptr;
 	pcap_t		*captura;
 
-	fprintf(stderr, "fila: pid %d\n", getpid());
+	Debug("pid %d", getpid());
 
 	/* We'll ask for SCHED_RR scheduling policy */
 #ifdef __linux__
 	if (pthread_getschedparam(pthread_self(), &policy, &schedparams) == 0) {
 		schedparams.sched_priority = sched_get_priority_max(SCHED_RR);
 		if (pthread_setschedparam(pthread_self(), SCHED_RR, &schedparams) == 0) {
-			fprintf(stderr, "conversor: Wheee! we're using SCHED_RR! :)\n");
+			Debug("enabled SCHED_RR");
 		}
 		else {
-			fprintf(stderr, "conversor: could NOT set SCHED_RR\n");
-			perror("damn: ");
+			Debug("SCHED_RR not enabled");
+			perror("pthread_setschedparam");
 		}
-	}
-	else {
-		fprintf(stderr, "conversor: pthread_getschedparam() failed\n");
 	}
 #endif
 
@@ -190,11 +186,10 @@ static void *fila_coleta()
 	   sem (-1) timeout de leitura */
 	dev = conf_get_interface();
 	if (dev == NULL) {
-		fprintf(stderr, "%s:%d: error while trying to open network interface\n",
-				__FILE__, __LINE__);
+		Debug("error while trying to open network interface");
 		return (void *)ERROR_IO;
 	}
-	fprintf(stderr, "abrindo: `%s'\n", dev);
+	Debug("opening network device `%s' for capture", dev);
 #ifdef __FreeBSD__
 	captura = pcap_open_live(dev, FILA_SNAPLEN, 1, 1000, erro_pcap_string);
 #endif
@@ -202,13 +197,13 @@ static void *fila_coleta()
 	captura = pcap_open_live(dev, FILA_SNAPLEN, 1, -1, erro_pcap_string);
 #endif
 	if (captura == NULL) {
-		pcap_perror(captura, "conversor: ");
+		pcap_perror(captura, "pcap_open_live");
 		return (void *)ERROR_IO;
 	}
 #ifdef __FreeBSD__
 	/* Ask non-blocking I/O */
 	if (pcap_get_selectable_fd(captura) == -1) {
-		fprintf(stderr, "fila: non-blocking I/O refused :(\n");
+		Debug("non-blocking I/O refused");
 	}
 #endif
 
@@ -251,7 +246,7 @@ static void *fila_coleta()
 /*
  * apenas atualiza o tamanho da fila e o fim (???)
  */
-	static void
+static void
 fila_remove()
 {
 	fila_fim = (fila_fim + 1) % FILA_MAX;
@@ -272,7 +267,8 @@ fila_remove()
 /*
    entrega o proximo pacote, se houver
    */
-static void fila_proximo()
+static void
+fila_proximo()
 {
 	while (fila_tam == 0) {
 		sem_wait(&fila_semaforo);
@@ -280,7 +276,8 @@ static void fila_proximo()
 }
 
 
-static int fila_inicializa()
+static int
+fila_inicializa()
 {
 	if (sem_init(&fila_semaforo, 0, 0) != 0) {
 		return ERROR_PKTQUEUE;
@@ -291,7 +288,8 @@ static int fila_inicializa()
 /*****************************************************************************/
 
 
-static int conv_preprocessa_pacote(const u_char *packet, pedb_t *prepacote)
+static int
+conv_preprocessa_pacote(const u_char *packet, pedb_t *prepacote)
 {
 	struct ether_header	*ether;
 	IP_HEADER		*ip;
@@ -386,20 +384,19 @@ static int conv_processa_prepacote(pedb_t *dados)
 #endif
 
 	if (hlhost_getRowstatus(dados->interface) != ROWSTATUS_ACTIVE) {
-		fprintf(stderr, "conversor: interface %d na HlHost inativa\n",
-				dados->interface);
+		Debug("inactive hlHost interface %d", dados->interface);
 		return ERROR_ISINACTIVE;
 	}
 
 	if (pdist_control_busca_status(dados->interface) != ROWSTATUS_ACTIVE) {
-		fprintf(stderr, "conversor: interface %d na protocolDist inativa\n",
-				dados->interface);
+		Debug("inactive protocolDist interface %d", dados->interface);
 		return ERROR_ISINACTIVE;
 	}
 
 #if DEBUGMSG_INFO_PACOTE
-	fprintf(stderr, "\033[0;37m Pacote: %d.%d.%d.(%ds/%dd)", dados->prot_enlace, dados->prot_rede,
-			dados->prot_transporte, dados->rede_sport, dados->rede_dport);
+	Debug("packet: %d.%d.%d.(%ds/%dd)", dados->prot_enlace, dados->prot_rede,
+			dados->prot_transporte, dados->rede_sport,
+			dados->rede_dport);
 #endif
 
 	/* achar encapsulamento enlace.rede.(null).(null) */
@@ -409,22 +406,21 @@ static int conv_processa_prepacote(pedb_t *dados)
 		/* encapsulamento encontrado - salvar o localindex */
 		dados->nl_localindex = pdir_ptr->local_index;
 #if DEBUGMSG_PROC_PACOTE
-		fprintf(stderr, "\033[0;34menlace.rede.(null).(null)\n");
+		Debug("enlace.rede.(null).(null)");
 #endif
 #if DEBUGMSG_INFO_PACOTE
 		informacao[4] = 'E';
 		informacao[5] = 'R';
 #endif
-		if (protdist_stats_insereAtualiza(dados->interface, pdir_ptr->local_index,
+		if (protdist_stats_insereAtualiza(dados->interface,
+					pdir_ptr->local_index,
 					1, dados->tamanho) != SUCCESS) {
-			fprintf(stderr, "%sconversor: protdist_stats_insereAtualiza() falhou%s\n",
-					error_color_string, reset_color_string);
+			Debug("protdist_stats_insereAtualiza() falhou");
 		}
 		/* encapsulamento suporta nlhost? */
 		if (pdir_ptr->host_config == PDIR_CFG_supportedOn) {
 			if (nlhost_insereAtualiza(dados) != SUCCESS) {
-				fprintf(stderr, "%sconversor: nlhost_insereAtualiza() falhou%s\n",
-						error_color_string, reset_color_string);
+				Debug("nlhost_insereAtualiza() falhou");
 			}
 		}
 
@@ -458,24 +454,23 @@ static int conv_processa_prepacote(pedb_t *dados)
 	if (pdir_ptr != NULL) {
 		/* encapsulamento encontrado */
 #if DEBUGMSG_PROC_PACOTE
-		fprintf(stderr, "\033[0;36menlace.rede.transporte.(null)\n");
+		Debug("enlace.rede.transporte.(null)");
 #endif
 #if DEBUGMSG_INFO_PACOTE
 		informacao[6] = 'T';
 #endif
 		dados->al_localindex = pdir_ptr->local_index;
 
-		if (protdist_stats_insereAtualiza(dados->interface, pdir_ptr->local_index,
+		if (protdist_stats_insereAtualiza(dados->interface,
+					pdir_ptr->local_index,
 					1, dados->tamanho) != SUCCESS) {
-			fprintf(stderr, "%sconversor: protdist_stats_insereAtualiza() falhou%s\n",
-					error_color_string, reset_color_string);
+			Debug("protdist_stats_insereAtualiza() falhou");
 		}
 
 		/* encapsulamento suporta alhost? */
 		if (pdir_ptr->host_config == PDIR_CFG_supportedOn) {
 			if (alhost_insereAtualiza(dados) != SUCCESS) {
-				fprintf(stderr, "%sconversor: alhost_insereAtualiza() falhou%s\n",
-						error_color_string, reset_color_string);
+				Debug("alhost_insereAtualiza() falhou");
 			}
 		}
 
@@ -483,12 +478,10 @@ static int conv_processa_prepacote(pedb_t *dados)
 		if ((pdir_ptr->matrix_config == PDIR_CFG_supportedOn) &&
 				(hlmatrix_getRowstatus(dados->interface) == ROWSTATUS_ACTIVE)) {
 			if (almatrix_SD_insereAtualiza(dados) != SUCCESS) {
-				fprintf(stderr, "%sconversor: almatrix_SD_insereAtualiza() falhou%s\n",
-						error_color_string, reset_color_string);
+				Debug("almatrix_SD_insereAtualiza() falhou");
 			}
 			if (almatrix_DS_insereAtualiza(dados) != SUCCESS) {
-				fprintf(stderr, "%sconversor: almatrix_DS_insereAtualiza() falhou%s\n",
-						error_color_string, reset_color_string);
+				Debug("almatrix_DS_insereAtualiza() falhou");
 			}
 		}
 #if PTSL
@@ -561,22 +554,20 @@ static int conv_processa_prepacote(pedb_t *dados)
 	/* salvar o localindex para as Al* */
 	dados->al_localindex = pdir_ptr->local_index;
 #if DEBUGMSG_PROC_PACOTE
-	fprintf(stderr, "\033[1;32menlace.rede.transporte.aplicacao\n");
+	Debug("enlace.rede.transporte.aplicacao");
 #endif
 #if DEBUGMSG_INFO_PACOTE
 	informacao[7] = 'A';
 #endif
 	if (protdist_stats_insereAtualiza(dados->interface, pdir_ptr->local_index,
 				1, dados->tamanho) != SUCCESS) {
-		fprintf(stderr, "%sconversor: protdist_stats_insereAtualiza() falhou%s\n",
-				error_color_string, reset_color_string);
+		Debug("protdist_stats_insereAtualiza() falhou");
 	}
 
 	/* encapsulamento suporta alhost? */
 	if (pdir_ptr->host_config == PDIR_CFG_supportedOn) {
 		if (alhost_insereAtualiza(dados) != SUCCESS) {
-			fprintf(stderr, "%sconversor: alhost_insereAtualiza falhou%s\n",
-					error_color_string, reset_color_string);
+			Debug("alhost_insereAtualiza falhou");
 		}
 	}
 
@@ -584,13 +575,11 @@ static int conv_processa_prepacote(pedb_t *dados)
 	if (pdir_ptr->matrix_config == PDIR_CFG_supportedOn) {
 		if (hlmatrix_getRowstatus(dados->interface) == ROWSTATUS_ACTIVE) {
 			if (almatrix_SD_insereAtualiza(dados) != SUCCESS) {
-				fprintf(stderr, "%sconversor: almatrix_SD_insereAtualiza() falhou%s\n",
-						error_color_string, reset_color_string);
+				Debug("almatrix_SD_insereAtualiza() falhou");
 			}
 
 			if (almatrix_DS_insereAtualiza(dados) != SUCCESS) {
-				fprintf(stderr, "%sconversor: almatrix_DS_insereAtualiza() falhou%s\n",
-						error_color_string, reset_color_string);
+				Debug("almatrix_DS_insereAtualiza() falhou");
 			}
 		}
 	}
@@ -600,7 +589,7 @@ static int conv_processa_prepacote(pedb_t *dados)
 #endif
 
 #if DEBUGMSG_INFO_PACOTE
-	fprintf(stderr, "%s\n", informacao);
+	Debug("%s", informacao);
 #endif
 
 	return SUCCESS;
@@ -629,12 +618,12 @@ void *captura_processa_pacote()
 
 	pedb_t	    prepacote;
 
-	fprintf(stderr, "conversor: pid %d\n", getpid());
+	Debug("pid %d", getpid());
 
 #if MEDIR_DESEMPENHO
 	arq_ptr = fopen("/tmp/conversor.data", "w");
 	if (arq_ptr == NULL) {
-		fprintf(stderr, " *** conversor: sem poder gravar dados\n");
+		perror("fopen(/tmp/conversor.data)");
 		exit(-10);
 	}
 #endif
@@ -645,8 +634,7 @@ void *captura_processa_pacote()
 	}
 
 	if (pthread_create(&thr_captura, NULL, fila_coleta, NULL) != 0) {
-		fprintf(stderr, "%sconversor: pthread_create() falhou%s\n",
-				error_color_string, reset_color_string);
+		perror("pthread_create");
 		return (void *)ERROR_THREAD;
 	}
 
@@ -700,20 +688,17 @@ void *captura_processa_pacote()
 int conv_inicializa()
 {
 	if (pdist_control_insere(2, 0, owner) != SUCCESS) {
-		fprintf(stderr, "%sconversor: pdist_control_insere(2, 0, %s) != SUCCESS%s\n",
-				error_color_string, owner, reset_color_string);
+		Debug("pdist_control_insere(2, 0, %s) != SUCCESS", owner);
 		return ERROR_REALLYBAD;
 	}
 
 	if (hlhost_insere(2, owner) != SUCCESS) {
-		fprintf(stderr, "%sconversor: hlhost_insere(2, %s) falhou%s\n",
-				error_color_string, owner, reset_color_string);
+		Debug("hlhost_insere(2, %s) falhou", owner);
 		return ERROR_REALLYBAD;
 	}
 
 	if (hlmatrix_insere(2, owner) != SUCCESS) {
-		fprintf(stderr, "%sconversor: hlmatrix_insere(2, %s) falhou%s\n",
-				error_color_string, owner, reset_color_string);
+		Debug("hlmatrix_insere(2, %s) falhou", owner);
 		return ERROR_REALLYBAD;
 	}
 
@@ -732,35 +717,30 @@ int conv_inicializa()
 //
 //		/* atualizar tabelas */
 //		if (protdist_control_updateEntry(prepacote.interface, drop_acumulado) != SUCCESS) {
-//		    fprintf(stderr, "%srmon2.conversor.captura_processa_pacote(): updateEntry falhou%s\n",
-//			    error_color_string, reset_color_string);
+//		    Debug("updateEntry falhou");
 //		}
 //
 //		if (hlhost_atualizaNlDroppedFrames(prepacote.interface, drop_acumulado) != SUCCESS) {
-//		    fprintf(stderr, "%sconversor: hlhost_atualizaNlDroppedFrames(%d, %u) falhou%s\n",
-//			    error_color_string, prepacote.interface, drop_acumulado,
-//			    reset_color_string);
+//		    Debug("hlhost_atualizaNlDroppedFrames(%d, %u) falhou",
+//			    prepacote.interface, drop_acumulado);
 //		}
 //
 //		if (hlhost_atualizaAlDroppedFrames(prepacote.interface, drop_acumulado) != SUCCESS) {
-//		    fprintf(stderr, "%sconversor: hlhost_atualizaAlDroppedFrames(%d, %u) falhou%s\n",
-//			    error_color_string, prepacote.interface, drop_acumulado,
-//			    reset_color_string);
+//		    Debug("hlhost_atualizaAlDroppedFrames(%d, %u) falhou",
+//			    prepacote.interface, drop_acumulado);
 //		}
 //
 //		if (hlmatrix_atualizaNlDroppedFrames(prepacote.interface, drop_acumulado) != SUCCESS) {
-//		    fprintf(stderr, "%sconversor: hlmatrix_atualizaNlDroppedFrames(%d, %u) falhou%s\n",
-//			    error_color_string, prepacote.interface, drop_acumulado,
-//			    reset_color_string);
+//		    Debug("hlmatrix_atualizaNlDroppedFrames(%d, %u) falhou",
+//			    prepacote.interface, drop_acumulado);
 //		}
 //
 //		if (hlmatrix_atualizaAlDroppedFrames(prepacote.interface, drop_acumulado) != SUCCESS) {
-//		    fprintf(stderr, "%sconversor: hlmatrix_atualizaAlDroppedFrames(%d, %u) falhou%s\n",
-//			    error_color_string, prepacote.interface, drop_acumulado,
-//			    reset_color_string);
+//		    Debug("hlmatrix_atualizaAlDroppedFrames(%d, %u) falhou",
+//			    prepacote.interface, drop_acumulado);
 //		}
 //
-//		fprintf(stderr, "ARGH! perda de pacote!\n");
+//		Debug("dropped package");
 //	    }
 //	}
 

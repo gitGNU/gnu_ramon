@@ -42,13 +42,20 @@
  *  constants here
  */
 /** \brief Enumeration of server command types */
-enum en_server_commands {CMD_INSTALL, CMD_RUN, CMD_PAUSE, CMD_STOP, CMD_REMOVE, CMD_WRONG};
+enum en_server_commands {
+	CMD_INSTALL,
+	CMD_RUN,
+	CMD_PAUSE,
+	CMD_STOP,
+	CMD_REMOVE,
+	CMD_WRONG
+};
 
 
 /*
  *  forward prototypes
  */
-static int resolve_command(char *command_string);
+static int resolve_command(char *);
 static void print_usage();
 
 

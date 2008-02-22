@@ -25,10 +25,10 @@
 #ifndef __LOG_H__
 #define __LOG_H__
 
-void debug(const char *, ...);
-void fatal(const char *, ...);
+#define Debug(...) debug(__FILE__, __LINE__, __VA_ARGS__)
+#define Fatal(...) fatal(__FILE__, __LINE__, __VA_ARGS__)
 
-#define Debug(...) debug(__VA_ARGS__)
-#define Fatal(...) fatal(__VA_ARGS__)
+void debug(const char *, const int, const char *, ...);
+void fatal(const char *, const int, const char *, ...);
 
 #endif	/* __LOG_H__ */
