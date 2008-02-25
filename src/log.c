@@ -33,9 +33,9 @@ debug(const char *file, const int line, const char *str, ...)
 	char	buffer[1024];
 	va_list	varargs;
 
-	snprintf(buffer, sizeof(buffer), "ramon (%s:%d): %s\n", file, line, str);
+	snprintf(buffer, sizeof(buffer), "[%s:%d]  %s\n", file, line, str);
 	va_start(varargs, str);
-	fprintf(stderr, buffer, varargs);
+	vfprintf(stderr, buffer, varargs);
 	va_end(varargs);
 }
 
