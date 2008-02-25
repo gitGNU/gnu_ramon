@@ -71,15 +71,15 @@
 static pdir_node_t	*pdir_table[PDIR_TAM] = {NULL, };
 
 
-/*  \brief  a new structure to see if an encapsulation is registered in the
+/** \brief  a new structure to see if an encapsulation is registered in the
  *	    protocol directory (protocolDir).
  *
- *  This new structure consists of a bit-table, where each bit stores if a
+ *  This new structure consists of a bitmap, where each bit stores if a
  *  application protocol should or should not be further analysed.
  *
- *  The size can be determined using this formula to be 'portable':
+ *  The size is determined by:
  *
- *	total_size = 65536 / (8 * sizeof(long))
+ *	total_size = Entries / (8 * sizeof(long))
  */
 #define WORDSIZE_BITS (sizeof(long) * 8)
 static unsigned long	pdir_bit_table[65536 / WORDSIZE_BITS];
@@ -99,7 +99,7 @@ static traco_t		*traco_novo_ptr;
 #include "lista_indices.h"
 
 
-/*  \brief  Lookup function for the protocolDir
+/**  \brief  Lookup function for the protocolDir
  *
  *  This function searches the protocolDir table, telling the caller if the
  *  RMON2 agent is programmed to completely decode the packet.
@@ -237,23 +237,21 @@ static int test_isstring(char *ptr) {
 	int
 init_protocoldir(char *filename)
 {
-	const char		sep_ptr[] = "\n\t\r ";
-	char			linha[200] = {0,};
-	char			*token_ar[16] = {0,};
-	unsigned int	contador = 1;
-	unsigned int	line = 0;
-	int				ret;
-	FILE			*file_ptr;
-	pdir_node_t		*pdn_ptr;
+	const char	 sep_ptr[] = "\n\t\r ";
+	char		 linha[256];
+	char		*token_ar[16];
+	unsigned int	 contador = 1;
+	unsigned int	 line = 0;
+	int		 ret;
+	FILE		*file_ptr;
+	pdir_node_t	*pdn_ptr;
 
-	Debug("initializing protocolDir (%s)");
+	if (filename == NULL)
+		filename = PDIR_CONF;
 
-	if (filename != NULL) {
-		file_ptr = fopen(filename, "r");
-	}
-	else {
-		file_ptr = fopen(PDIR_CONF, "r");
-	}
+	Debug("initializing protocolDir (%s)", filename);
+	file_ptr = fopen(filename, "r");
+
 
 	/* read all lines */
 	while (fgets(linha, sizeof(linha), file_ptr) != NULL) {
@@ -319,21 +317,21 @@ init_protocoldir(char *filename)
 		if (pdn_ptr == NULL)
 			return ERROR_CALLOC;
 
-		pdn_ptr->idlink			= strtol(token_ar[0], NULL, 10);
-		pdn_ptr->idnet			= strtol(token_ar[1], NULL, 10);
-		pdn_ptr->idtrans		= strtol(token_ar[2], NULL, 10);
-		pdn_ptr->idapp			= strtol(token_ar[3], NULL, 10);
-		pdn_ptr->param1			= strtol(token_ar[4], NULL, 10);
-		pdn_ptr->param2			= strtol(token_ar[5], NULL, 10);
-		pdn_ptr->param3			= strtol(token_ar[6], NULL, 10);
-		pdn_ptr->param4			= strtol(token_ar[7], NULL, 10);
-		pdn_ptr->descricao		= strdup(token_ar[8]);
-		pdn_ptr->tipo			= strtol(token_ar[9], NULL, 10);
+		pdn_ptr->idlink		= strtol(token_ar[0], NULL, 10);
+		pdn_ptr->idnet		= strtol(token_ar[1], NULL, 10);
+		pdn_ptr->idtrans	= strtol(token_ar[2], NULL, 10);
+		pdn_ptr->idapp		= strtol(token_ar[3], NULL, 10);
+		pdn_ptr->param1		= strtol(token_ar[4], NULL, 10);
+		pdn_ptr->param2		= strtol(token_ar[5], NULL, 10);
+		pdn_ptr->param3		= strtol(token_ar[6], NULL, 10);
+		pdn_ptr->param4		= strtol(token_ar[7], NULL, 10);
+		pdn_ptr->descricao	= strdup(token_ar[8]);
+		pdn_ptr->tipo		= strtol(token_ar[9], NULL, 10);
 		pdn_ptr->addrmap_config	= strtol(token_ar[10], NULL, 10);
 		pdn_ptr->host_config	= strtol(token_ar[11], NULL, 10);
 		pdn_ptr->matrix_config	= strtol(token_ar[12], NULL, 10);
-		pdn_ptr->owner			= strdup(token_ar[13]);
-		pdn_ptr->row_status		= strtol(token_ar[14], NULL, 10);
+		pdn_ptr->owner		= strdup(token_ar[13]);
+		pdn_ptr->row_status	= strtol(token_ar[14], NULL, 10);
 		pdn_ptr->local_index	= contador;
 
 		if ((pdn_ptr->descricao == NULL) || (pdn_ptr->owner == NULL))
