@@ -41,6 +41,21 @@ debug(const char *file, const int line, const char *str, ...)
 
 
 void
+error(const char *file, const int line, const char *str, ...)
+{
+	char	buffer[1024];
+	va_list	varargs;
+
+	snprintf(buffer, sizeof(buffer), "[%s:%d]  error: %s\n", file, line, str);
+	va_start(varargs, str);
+	vfprintf(stderr, buffer, varargs);
+	va_end(varargs);
+
+	exit(EXIT_FAILURE);
+}
+
+
+void
 fatal(const char *file, const int line, const char *str, ...)
 {
 	va_list varargs;

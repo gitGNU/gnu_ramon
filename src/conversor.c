@@ -197,7 +197,7 @@ static void *fila_coleta()
 	captura = pcap_open_live(dev, FILA_SNAPLEN, 1, -1, erro_pcap_string);
 #endif
 	if (captura == NULL) {
-		pcap_perror(captura, "pcap_open_live");
+		Error("could not open network device `%s'", dev);
 		return (void *)ERROR_IO;
 	}
 #ifdef __FreeBSD__

@@ -26,9 +26,11 @@
 #define __LOG_H__
 
 #define Debug(...) debug(__FILE__, __LINE__, __VA_ARGS__)
+#define Error(...) error(__FILE__, __LINE__, __VA_ARGS__)
 #define Fatal(...) fatal(__FILE__, __LINE__, __VA_ARGS__)
 
 void debug(const char *, const int, const char *, ...);
+void error(const char *, const int, const char *, ...);
 void fatal(const char *, const int, const char *, ...);
 
 #endif	/* __LOG_H__ */
