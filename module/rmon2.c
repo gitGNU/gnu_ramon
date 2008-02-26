@@ -1,6 +1,6 @@
 /*
  * Ramon - A RMON2 Network Monitoring Agent
- * Copyright (C) 2003 Ricardo Nabinger Sanchez
+ * Copyright (C) 2003, 2008  Ricardo Nabinger Sanchez
  *
  * This file is part of Ramon, a network monitoring agent which implements
  * the MIB proposed in RFC-2021.
@@ -28,8 +28,8 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
-#include "rmon2.h"
 
+#include "rmon2.h"
 #include "sysuptime.h"
 #include "protocolDir_scalar.h"
 #include "protocolDir.h"
@@ -50,24 +50,22 @@
  *  \attention Some of the functions called call another initialization
  *  functions.
  */
-void init_rmon2()
+void
+init_rmon2()
 {
-    /*
-     *	here we call initialization functions
-     */
-    if (init_sysuptime() != SUCCESS) {
-	snmp_log(LOG_ERR, "rmon2: error while initializing time accounting\n");
-	return;
-    }
+	/* Here we call the initialization functions. */
+	if (init_sysuptime() != SUCCESS) {
+		snmp_log(LOG_ERR, "rmon2: error while initializing time accounting\n");
+		return;
+	}
 
-    init_protocolDir_scalar();
-    init_protocolDir();
-    init_protocolDist();
-    init_nlHost();
-    init_alHost();
-    init_nlMatrix();
-    init_alMatrix();
+	init_protocolDir_scalar();
+	init_protocolDir();
+	init_protocolDist();
+	init_nlHost();
+	init_alHost();
+	init_nlMatrix();
+	init_alMatrix();
 
-    snmp_log(LOG_INFO, "rmon2: initialized.\n");
+	snmp_log(LOG_INFO, "rmon2: initialized.\n");
 }
-
