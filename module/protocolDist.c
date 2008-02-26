@@ -163,7 +163,7 @@ init_protocolDist(void)
     initialize_table_protocolDistStatsTable();
     initialize_table_protocolDistControlTable();
 
-    if (conv_inicializa() == SUCCESS) {
+    if (init_sniffer() == SUCCESS) {
 	if (pthread_create(&thr_captura, NULL, captura_processa_pacote, NULL) != 0) {
 	    /* panic time! */
 	    snmp_log(LOG_ERR, " *** protocolDist: could not create thread\n");

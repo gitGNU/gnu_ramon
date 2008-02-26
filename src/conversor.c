@@ -289,7 +289,7 @@ fila_inicializa()
 
 
 static int
-conv_preprocessa_pacote(const u_char *packet, pedb_t *prepacote)
+pkt_decode(const u_char *packet, pedb_t *prepacote)
 {
 	struct ether_header	*ether;
 	IP_HEADER		*ip;
@@ -375,7 +375,7 @@ conv_preprocessa_pacote(const u_char *packet, pedb_t *prepacote)
 }
 
 
-static int conv_processa_prepacote(pedb_t *dados)
+static int pkt_process(pedb_t *dados)
 {
 	pdir_node_t	*pdir_ptr;
 
@@ -656,8 +656,8 @@ void *captura_processa_pacote()
 		prepacote.uptime = sysuptime();
 		prepacote.tamanho = fila[fila_fim].tam;
 
-		if (conv_preprocessa_pacote(fila[fila_fim].dados, &prepacote) == SUCCESS) {
-			conv_processa_prepacote(&prepacote);
+		if (pkt_decode(fila[fila_fim].dados, &prepacote) == SUCCESS) {
+			pkt_process(&prepacote);
 #if PTSL
 			if ((prepacote.prim_traco_rede != NULL) ||
 					(prepacote.prim_traco_transporte != NULL) ||
@@ -676,8 +676,9 @@ void *captura_processa_pacote()
 			medidos += AGUARDAR + drop_atual;
 			aguardar = AGUARDAR;
 
-			fprintf(arq_ptr, "%u %0.0f %0.0f %0.0f %u\n", medidos, (double)ticks_ini,
-					(double)ticks_meio, (double)ticks_fim, drop_acumulado);
+			fprintf(arq_ptr, "%u %0.0f %0.0f %0.0f %u\n", medidos,
+					(double)ticks_ini, (double)ticks_meio,
+					(double)ticks_fim, drop_acumulado);
 			fflush(arq_ptr);
 		}
 #endif
@@ -685,7 +686,14 @@ void *captura_processa_pacote()
 }
 
 
-int conv_inicializa()
+/**
+ * Initializes the packet sniffer.
+ *
+ * FIXME: this should actually create the threads, and not use hardcoded
+ * network interface identifiers.
+ */
+int
+init_sniffer()
 {
 	if (pdist_control_insere(2, 0, owner) != SUCCESS) {
 		Debug("pdist_control_insere(2, 0, %s) != SUCCESS", owner);

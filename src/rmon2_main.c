@@ -61,7 +61,7 @@ int main()
 		Fatal("error while initializing protocolDir group");
 	}
 
-	if (conv_inicializa() != SUCCESS) {
+	if (init_sniffer() != SUCCESS) {
 		Fatal("error while initializing packet sniffer");
 	}
 

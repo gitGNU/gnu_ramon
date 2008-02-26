@@ -23,7 +23,7 @@
 #ifndef __CONVERSOR_H
 #define __CONVERSOR_H
 
-int conv_inicializa();
+int init_sniffer();
 void *captura_processa_pacote();
 void *fila_inicia_captura();
 
