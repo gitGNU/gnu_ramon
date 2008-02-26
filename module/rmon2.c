@@ -55,7 +55,7 @@ init_rmon2()
 {
 	/* Here we call the initialization functions. */
 	if (init_sysuptime() != SUCCESS) {
-		snmp_log(LOG_ERR, "rmon2: error while initializing time accounting\n");
+		snmp_log(LOG_ERR, "rmon2: error while initializing uptime counter\n");
 		return;
 	}
 
