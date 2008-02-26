@@ -41,10 +41,10 @@
 #define HLMATRIX_TAM	4
 
 
-/* tabela pré-inicializada com tudo zerado */
-static hlmatrix_t   tabela[HLMATRIX_TAM] = {{0, }, };
+/* Main hlMatrix table. */
+static hlmatrix_t   tabela[HLMATRIX_TAM];
 
-static unsigned int quantidade = 0;
+static unsigned int quantidade;
 
 /* indexes list */
 #undef  QUERO_REMOVER
@@ -59,15 +59,15 @@ unsigned int hlmatrix_quantidade()
 }
 
 
-int hlmatrix_insere(const unsigned int interface, char *owner)
+int
+hlmatrix_insere(const unsigned int interface, char *owner)
 {
 	if (interface < HLMATRIX_TAM) {
 		if (tabela[interface].rowstatus != 0) {
 			/* a interface já foi ativada */
 #if DEBUG_HLMATRIX
-			Debug("impossível ativar interface #%u (status=%d)",
-					interface,
-					tabela[interface].rowstatus);
+			Debug("interface %u already enabled (rowstatus=%d)",
+					interface, tabela[interface].rowstatus);
 #endif
 			return ERROR_ISACTIVE;
 		}
@@ -78,13 +78,13 @@ int hlmatrix_insere(const unsigned int interface, char *owner)
 		if (lista_insere(interface) != SUCCESS) {
 			Debug("erro ao tentar inserir interface %u na lista",
 					interface);
+			return ERROR_MALLOC;
 		}
 
 		quantidade++;
 
 #if DEBUG_HLMATRIX
-		Debug("ativando interface #%u, owner='%s'",
-				interface, owner);
+		Debug("interface %u enabled, owner='%s'", interface, owner);
 #endif
 		return SUCCESS;
 	}
@@ -93,227 +93,229 @@ int hlmatrix_insere(const unsigned int interface, char *owner)
 }
 
 
-int hlmatrix_getRowstatus(const int unsigned interface)
+int
+hlmatrix_getRowstatus(const int unsigned interface)
 {
 	if (interface < HLMATRIX_TAM) {
+		/* FIXME: should query which interfaces were enabled, and
+		 * then report its status.  Otherwise, should return
+		 * NOSUCHENTRY. */
 		if (tabela[interface].rowstatus == ROWSTATUS_ACTIVE) {
 			return tabela[interface].rowstatus;
 		}
-		else {
-			return ERROR_ISINACTIVE;
-		}
+	
+		return ERROR_ISINACTIVE;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+	
+	return ERROR_NOSUCHENTRY;
 }
 
 
-int hlmatrix_setRowstatus(const unsigned int interface, const int novo_status)
+int
+hlmatrix_setRowstatus(const unsigned int interface, const int novo_status)
 {
 	if (interface < HLMATRIX_TAM) {
+		/* FIXME: should check if interface was previously enabled,
+		 * and then change status.  Otherwise, should return
+		 * NOSUCHENTRY. */
 		if (tabela[interface].rowstatus == ROWSTATUS_ACTIVE) {
 			tabela[interface].rowstatus = novo_status;
 			return ERROR_NOSUCHENTRY;
 		}
-		else {
-			return ERROR_ISINACTIVE;
-		}
+		
+		return ERROR_ISINACTIVE;
 	}
-	else {
-		return SUCCESS;
-	}
+
+	/* FIXME: this looks plain wrong. */
+	return SUCCESS;
 }
 
 
 /* leituras - Nl */
-int hlmatrix_getNlDroppedFrames(const unsigned int interface, uint32_t *retorna)
+int
+hlmatrix_getNlDroppedFrames(const unsigned int interface, uint32_t *retorna)
 {
 	if ((interface < HLMATRIX_TAM) &&
 			(tabela[interface].rowstatus == ROWSTATUS_ACTIVE)) {
 		*retorna = tabela[interface].nl_droppedframes;
 		return SUCCESS;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
-int hlmatrix_getNlInserts(const unsigned int interface, uint32_t *retorna)
+int
+hlmatrix_getNlInserts(const unsigned int interface, uint32_t *retorna)
 {
 	if ((interface < HLMATRIX_TAM) &&
 			(tabela[interface].rowstatus == ROWSTATUS_ACTIVE)) {
 		*retorna = tabela[interface].nl_inserts;
 		return SUCCESS;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
-int hlmatrix_getNlDeletes(const unsigned int interface, uint32_t *retorna)
+int
+hlmatrix_getNlDeletes(const unsigned int interface, uint32_t *retorna)
 {
 	if ((interface < HLMATRIX_TAM) &&
 			(tabela[interface].rowstatus == ROWSTATUS_ACTIVE)) {
 		*retorna = tabela[interface].nl_deletes;
 		return SUCCESS;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
-int hlmatrix_getNlMaxentries(const unsigned int interface, int32_t *retorna)
+int
+hlmatrix_getNlMaxentries(const unsigned int interface, int32_t *retorna)
 {
 	if ((interface < HLMATRIX_TAM) &&
 			(tabela[interface].rowstatus == ROWSTATUS_ACTIVE)) {
 		*retorna = tabela[interface].nl_maxentries;
 		return SUCCESS;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
 /* leituras - Al */
-int hlmatrix_getAlDroppedFrames(const unsigned int interface, uint32_t *retorna)
+int
+hlmatrix_getAlDroppedFrames(const unsigned int interface, uint32_t *retorna)
 {
 	if ((interface < HLMATRIX_TAM) &&
 			(tabela[interface].rowstatus == ROWSTATUS_ACTIVE)) {
 		*retorna = tabela[interface].al_droppedframes;
 		return SUCCESS;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
-int hlmatrix_getAlInserts(const unsigned int interface, uint32_t *retorna)
+int
+hlmatrix_getAlInserts(const unsigned int interface, uint32_t *retorna)
 {
 	if ((interface < HLMATRIX_TAM) &&
 			(tabela[interface].rowstatus == ROWSTATUS_ACTIVE)) {
 		*retorna = tabela[interface].al_inserts;
 		return SUCCESS;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
-int hlmatrix_getAlDeletes(const unsigned int interface, uint32_t *retorna)
+int
+hlmatrix_getAlDeletes(const unsigned int interface, uint32_t *retorna)
 {
 	if ((interface < HLMATRIX_TAM) &&
 			(tabela[interface].rowstatus == ROWSTATUS_ACTIVE)) {
 		*retorna = tabela[interface].al_deletes;
 		return SUCCESS;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
-int hlmatrix_getAlMaxentries(const unsigned int interface, int *retorna)
+int
+hlmatrix_getAlMaxentries(const unsigned int interface, int *retorna)
 {
 	if ((interface < HLMATRIX_TAM) &&
 			(tabela[interface].rowstatus == ROWSTATUS_ACTIVE)) {
 		*retorna = tabela[interface].al_maxentries;
 		return SUCCESS;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
 /* atualizações */
-int hlmatrix_atualizaNlInserts(const unsigned int interface)
+int
+hlmatrix_atualizaNlInserts(const unsigned int interface)
 {
 	if (interface < HLMATRIX_TAM) {
 		if (tabela[interface].rowstatus == ROWSTATUS_ACTIVE) {
 			tabela[interface].nl_inserts++;
 			return SUCCESS;
 		}
-		else {
-			return ERROR_ISINACTIVE;
-		}
+
+		return ERROR_ISINACTIVE;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
-int hlmatrix_atualizaNlDeletes(const unsigned int interface)
+int
+hlmatrix_atualizaNlDeletes(const unsigned int interface)
 {
 	if (interface < HLMATRIX_TAM) {
 		if (tabela[interface].rowstatus == ROWSTATUS_ACTIVE) {
 			tabela[interface].nl_deletes++;
 			return SUCCESS;
 		}
-		else {
-			return ERROR_ISINACTIVE;
-		}
+
+		return ERROR_ISINACTIVE;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
-int hlmatrix_atualizaNlDroppedFrames(const unsigned int interface, const uint32_t drops)
+int
+hlmatrix_atualizaNlDroppedFrames(const unsigned int interface, const uint32_t drops)
 {
 	if (interface < HLMATRIX_TAM) {
 		tabela[interface].nl_droppedframes = drops;
 		return SUCCESS;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
-int hlmatrix_atualizaAlInserts(const unsigned int interface)
+int
+hlmatrix_atualizaAlInserts(const unsigned int interface)
 {
 	if (interface < HLMATRIX_TAM) {
 		if (tabela[interface].rowstatus == ROWSTATUS_ACTIVE) {
 			tabela[interface].al_inserts++;
 			return SUCCESS;
 		}
-		else {
-			return ERROR_ISINACTIVE;
-		}
+
+		return ERROR_ISINACTIVE;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
-int hlmatrix_atualizaAlDeletes(const unsigned int interface)
+int
+hlmatrix_atualizaAlDeletes(const unsigned int interface)
 {
 	if (interface < HLMATRIX_TAM) {
 		if (tabela[interface].rowstatus == ROWSTATUS_ACTIVE) {
 			tabela[interface].al_deletes++;
 			return SUCCESS;
 		}
-		else {
-			return ERROR_ISINACTIVE;
-		}
+
+		return ERROR_ISINACTIVE;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
-int hlmatrix_atualizaAlDroppedFrames(const unsigned int interface, const uint32_t drops)
+int
+hlmatrix_atualizaAlDroppedFrames(const unsigned int interface, const uint32_t drops)
 {
 	if (interface < HLMATRIX_TAM) {
 		if (tabela[interface].rowstatus == ROWSTATUS_ACTIVE) {
@@ -324,16 +326,16 @@ int hlmatrix_atualizaAlDroppedFrames(const unsigned int interface, const uint32_
 			return ERROR_ISINACTIVE;
 		}
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
 /*
  *  copy entry's owner to the buffer pointer 'ptr' received, 'maximo' sized
  */
-int hlmatrix_busca_owner(const unsigned int indice, char *ptr,
+int
+hlmatrix_busca_owner(const unsigned int indice, char *ptr,
 		const unsigned int maximo)
 {
 	unsigned int tamanho;
@@ -342,6 +344,8 @@ int hlmatrix_busca_owner(const unsigned int indice, char *ptr,
 			(tabela[indice].rowstatus == ROWSTATUS_ACTIVE)) {
 		tamanho = strlen(tabela[indice].owner);
 
+		/* FIXME: should either allocate the char * on behalf of the
+		 * caller, or just copy at most maximo chars, includind \0. */
 		if ((tamanho + 1) > maximo) {
 			/* buffer too small */
 			return 0;
@@ -352,13 +356,13 @@ int hlmatrix_busca_owner(const unsigned int indice, char *ptr,
 
 		return tamanho;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
-int hlmatrix_define_owner(const unsigned int interface, char *string)
+int
+hlmatrix_define_owner(const unsigned int interface, char *string)
 {
 	size_t  tamanho;
 	char    *salva_ptr;
@@ -380,73 +384,69 @@ int hlmatrix_define_owner(const unsigned int interface, char *string)
 
 			return SUCCESS;
 		}
-		else {
-			return ERROR_ISINACTIVE;
-		}
+
+		return ERROR_ISINACTIVE;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
-int hlmatrix_setNlmax(const unsigned int interface, const int32_t max)
+int
+hlmatrix_setNlmax(const unsigned int interface, const int32_t max)
 {
 	if (interface < HLMATRIX_TAM) {
 		if (tabela[interface].rowstatus == ROWSTATUS_ACTIVE) {
 			tabela[interface].nl_maxentries = max;
 			return SUCCESS;
 		}
-		else {
-			return ERROR_ISINACTIVE;
-		}
+
+		return ERROR_ISINACTIVE;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
-int hlmatrix_setAlmax(const unsigned int interface, const int32_t max)
+int
+hlmatrix_setAlmax(const unsigned int interface, const int32_t max)
 {
 	if (interface < HLMATRIX_TAM) {
 		if (tabela[interface].rowstatus == ROWSTATUS_ACTIVE) {
 			tabela[interface].al_maxentries = max;
 			return SUCCESS;
 		}
-		else {
-			return ERROR_ISINACTIVE;
-		}
+
+		return ERROR_ISINACTIVE;
 	}
-	else {
-		return ERROR_NOSUCHENTRY;
-	}
+
+	return ERROR_NOSUCHENTRY;
 }
 
 
 /*
  *  functions to prepare and traverse the index list
  */
-int hlmatrix_tabela_prepara(unsigned int *ptr)
+int
+hlmatrix_tabela_prepara(unsigned int *ptr)
 {
 	if (lista_primeiro() == SUCCESS) {
 		*ptr = lista_atual->indice;
 		return SUCCESS;
 	}
-	else {
-		return ERROR_INDEXLIST;
-	}
+
+	return ERROR_INDEXLIST;
 }
 
 
-int hlmatrix_tabela_proximo(unsigned int *ptr)
+int
+hlmatrix_tabela_proximo(unsigned int *ptr)
 {
 	if (lista_proximo() == SUCCESS) {
 		*ptr = lista_atual->indice;
 		return SUCCESS;
 	}
-	else {
-		return ERROR_INDEXLIST;
-	}
+
+	return ERROR_INDEXLIST;
 }
 
