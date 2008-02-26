@@ -26,10 +26,10 @@
  *   stats: hash, lista de indices
  */
 
-#include <stdint.h>	/* inteiros ISO C99 */
-#include <stdlib.h>	/* malloc, free */
-#include <stdio.h>	/* ? */
-#include <string.h>	/* strncpy */
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/types.h>
 
 #include "configuracao.h"
@@ -57,23 +57,21 @@
 
 
 /* os vetores das tabelas */
-static pdistcontrol_t	*cntrl_table[PDISTCNTRL_TAM] = {NULL, };
-static pdist_stats_t	*stats_hashtable[PDISTSTATS_TAM] = {NULL, };
+static pdistcontrol_t	*cntrl_table[PDISTCNTRL_TAM];
+static pdist_stats_t	*stats_hashtable[PDISTSTATS_TAM];
 
 /* informações sobre as tabelas */
-static unsigned int	cntrl_quantidade = 0;
-static unsigned int	stats_quantidade = 0;
-static unsigned int	stats_profundidade = 0;
+static unsigned int	cntrl_quantidade;
+static unsigned int	stats_quantidade;
+static unsigned int	stats_profundidade;
 
 
-/* agora incluir a lista encadeada */
 #define QUERO_REMOVER	1
 #define QUERO_PROXIMO	1
 #define QUERO_PRIMEIRO	1
 #include "lista_indices.h"
 
 
-/* ProtocolDist CONTROL *******************************************************/
 unsigned int pdist_control_busca_quantidade()
 {
 	return cntrl_quantidade;
