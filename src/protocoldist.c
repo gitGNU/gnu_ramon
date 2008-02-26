@@ -607,86 +607,86 @@ int protdist_stats_deleteEntry(const unsigned int index_control,
 }
 
 
-int protdist_stats_insereAtualiza(const unsigned int index_control,
-		const unsigned int index_stats, const uint32_t pkts, const uint32_t octets)
+/**
+ * Updates an existing entry for the given protocol encapsulation, or add a new
+ * entry with the data provided.
+ *
+ * \retval SUCCESS	If no errors during creation/updating.
+ * \retval ERROR_FULL	If protocolDist table is full.
+ * \retval ERROR_HASH	If too many collisions occured in the hash table.
+ * \retval ERROR_MALLOC	If memory could not be allocated.
+ */
+int
+pdist_update(const unsigned int index_control, const unsigned int index_stats,
+		const uint32_t pkts, const uint32_t octets)
 {
 	unsigned int i = 0;	    /* offset da hash */
 	unsigned int chave = ((index_control & 0xffff) << 16) | (index_stats & 0xffff);
 	unsigned int hash_index = protdist_stats_localiza(index_control, index_stats);
 
 	if (hash_index != PDISTSTATS_TAM) {
-		/* entrada existente - atualizar apenas */
+		/* Entry exists -- only update. */
 
 #if PDIST_DEBUG
-		Debug("(%d, %d, %u, %u)[%u]: atualizando entradas",
-				index_control, index_stats, pkts, octets, hash_index);
+		Debug("(%d, %d, %u, %u)[%u]: updating", index_control,
+				index_stats, pkts, octets, hash_index);
 #endif
 		stats_hashtable[hash_index]->pkts += pkts;
 		stats_hashtable[hash_index]->octets += octets;
 		return SUCCESS;
 	}
-	else {
-		/* criar uma nova */
-		if (stats_quantidade < PDISTSTATS_MAX) {
-			/* ainda tem espaço */
-			HASH(chave, i, hash_index);
 
-#if PDIST_DEBUG
-			Debug("(%d, %d, %u, %u): entrada nova",
-					index_control, index_stats, pkts, octets);
-#endif
-
-			while ((i < PDISTSTATS_MAX) && (stats_hashtable[hash_index] != NULL)) {
-				/* nao encontrou a entrada - tentar a proxima hash */
-				i++;
-				HASH(chave, i, hash_index);
-			}
-			if (i >= PDISTSTATS_MAX) {
-				Debug("could NOT add entry: (%u/%u)",
-						stats_quantidade,
-						PDISTSTATS_TAM);
-				return ERROR_HASH;
-			}
-
-#if PDIST_DEBUG
-			Debug("alocando em %u", hash_index);
-#endif
-
-			stats_hashtable[hash_index] = malloc(sizeof(pdist_stats_t));
-			if (stats_hashtable[hash_index] == NULL) {
-				return ERROR_MALLOC;
-			}
-
-			stats_hashtable[hash_index]->control_index = index_control;
-			stats_hashtable[hash_index]->protdir_index = index_stats;
-			stats_hashtable[hash_index]->pkts = pkts;
-			stats_hashtable[hash_index]->octets = octets;
-			stats_hashtable[hash_index]->chave_confirma = chave;
-			stats_quantidade++;
-
-			if (i > stats_profundidade) {
-				stats_profundidade = i;
-			}
-
-			/* inserir o novo índice na lista de índices */
-			if (lista_insere(hash_index) != SUCCESS) {
-				Debug("lista_insere(%u, %u) falhou",
-						chave, hash_index);
-			}
-
-#if PDIST_DEBUG
-			Debug("endereço alocado: %p", stats_hashtable[hash_index]);
-#endif
-
-			return SUCCESS;
-		}
-		else {
-			Debug("(%d, %d, %u, %u): tabela cheia",
-					index_control, index_stats, pkts, octets);
-			return ERROR_FULL;
-		}
+	if (stats_quantidade >= PDISTSTATS_MAX) {
+		/* Table is full, cannot create entry. */
+		Debug("(%d, %d, %u, %u): table is full", index_control,
+				index_stats, pkts, octets);
+		return ERROR_FULL;
 	}
 
+	/* Compute index for this entry. */
+	HASH(chave, i, hash_index);
+
+	while ((i < PDISTSTATS_MAX) && (stats_hashtable[hash_index] != NULL)) {
+		/* Compute another index, last one collided. */
+		i++;
+		HASH(chave, i, hash_index);
+	}
+	if (i >= PDISTSTATS_MAX) {
+		Debug("could not add entry, too many collisions: (%u/%u)",
+				stats_quantidade, PDISTSTATS_TAM);
+		return ERROR_HASH;
+	}
+
+#if PDIST_DEBUG
+	Debug("(%d, %d, %u, %u): new entry at %u", index_control, index_stats,
+			pkts, octets, hash_index);
+#endif
+
+	/* Get a struct and fill the data. */
+	stats_hashtable[hash_index] = malloc(sizeof(pdist_stats_t));
+	if (stats_hashtable[hash_index] == NULL) {
+#if PDIST_DEBUG
+		Debug("not enough memory");
+#endif
+		return ERROR_MALLOC;
+	}
+
+	stats_hashtable[hash_index]->control_index = index_control;
+	stats_hashtable[hash_index]->protdir_index = index_stats;
+	stats_hashtable[hash_index]->pkts = pkts;
+	stats_hashtable[hash_index]->octets = octets;
+	stats_hashtable[hash_index]->chave_confirma = chave;
+	stats_quantidade++;
+
+	/* Update depth of this hash table. */
+	if (i > stats_profundidade)
+		stats_profundidade = i;
+
+	/* Include this entry in the list, for OID traversal. */
+	if (lista_insere(hash_index) != SUCCESS)
+		Debug("lista_insere(%u, %u) failed", chave, hash_index);
+
+	return SUCCESS;
 }
 
 

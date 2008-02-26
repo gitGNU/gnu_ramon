@@ -412,11 +412,8 @@ static int pkt_process(pedb_t *dados)
 		informacao[4] = 'E';
 		informacao[5] = 'R';
 #endif
-		if (protdist_stats_insereAtualiza(dados->interface,
-					pdir_ptr->local_index,
-					1, dados->tamanho) != SUCCESS) {
-			Debug("protdist_stats_insereAtualiza() falhou");
-		}
+		pdist_update(dados->interface, pdir_ptr->local_index, 1,
+				dados->tamanho);
 		/* encapsulamento suporta nlhost? */
 		if (pdir_ptr->host_config == PDIR_CFG_supportedOn) {
 			if (nlhost_insereAtualiza(dados) != SUCCESS) {
@@ -461,11 +458,8 @@ static int pkt_process(pedb_t *dados)
 #endif
 		dados->al_localindex = pdir_ptr->local_index;
 
-		if (protdist_stats_insereAtualiza(dados->interface,
-					pdir_ptr->local_index,
-					1, dados->tamanho) != SUCCESS) {
-			Debug("protdist_stats_insereAtualiza() falhou");
-		}
+		pdist_update(dados->interface, pdir_ptr->local_index, 1,
+				dados->tamanho);
 
 		/* encapsulamento suporta alhost? */
 		if (pdir_ptr->host_config == PDIR_CFG_supportedOn) {
@@ -559,10 +553,8 @@ static int pkt_process(pedb_t *dados)
 #if DEBUGMSG_INFO_PACOTE
 	informacao[7] = 'A';
 #endif
-	if (protdist_stats_insereAtualiza(dados->interface, pdir_ptr->local_index,
-				1, dados->tamanho) != SUCCESS) {
-		Debug("protdist_stats_insereAtualiza() falhou");
-	}
+	pdist_update(dados->interface, pdir_ptr->local_index, 1,
+			dados->tamanho);
 
 	/* encapsulamento suporta alhost? */
 	if (pdir_ptr->host_config == PDIR_CFG_supportedOn) {

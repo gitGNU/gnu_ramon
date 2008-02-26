@@ -91,8 +91,8 @@ int pdist_stats_tabela_busca_octets(const unsigned int indice, uint32_t *copia);
 
 int protdist_stats_deleteEntry(const unsigned int index_control,
 	const unsigned int index_stats);
-int protdist_stats_insereAtualiza(const unsigned int index_control,
-	const unsigned int index_stats, const uint32_t pkts, const uint32_t octets);
+int pdist_update(const unsigned int, const unsigned int, const uint32_t,
+		const uint32_t);
 
 int pdist_stats_tabela_prepara();
 int pdist_stats_tabela_primeiro();
