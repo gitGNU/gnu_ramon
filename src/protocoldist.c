@@ -259,31 +259,35 @@ int pdist_control_define_owner(const unsigned int indice, const char *owner_ptr)
    */
 int pdist_control_define_status(const unsigned int indice, const int novo_status)
 {
-	if (indice < PDISTCNTRL_TAM) {
-		if (cntrl_table[indice] != NULL) {
-			/* entrada existe, verificar status passado */
-			if ((novo_status != ROWSTATUS_ACTIVE) &&
-					(novo_status != ROWSTATUS_NOT_IN_SERVICE) &&
-					(novo_status != ROWSTATUS_NOT_READY) &&
-					(novo_status != ROWSTATUS_CREATE_AND_GO) &&
-					(novo_status != ROWSTATUS_CREATE_AND_WAIT) &&
-					(novo_status != ROWSTATUS_DESTROY)) {
-				return ERROR_EVILVALUE;
-			}
-
-			cntrl_table[indice]->status = novo_status;
-
-			/* FIXME: status != ROWSTATUS_ACTIVE, demolir */
-
-			return SUCCESS;
-		}
-		else {
-			return ERROR_ISINACTIVE;
-		}
-	}
-	else {
+	if (indice >= PDISTCNTRL_TAM)
 		return ERROR_NOSUCHENTRY;
+
+	if (cntrl_table[indice] != NULL) {
+		/* Sanity-check new status value. */
+		switch (novo_status) {
+			case ROWSTATUS_ACTIVE:
+				/* Valid. */
+				break;
+
+			case ROWSTATUS_NOT_IN_SERVICE:
+			case ROWSTATUS_NOT_READY:
+			case ROWSTATUS_CREATE_AND_GO:
+			case ROWSTATUS_CREATE_AND_WAIT:
+			case ROWSTATUS_DESTROY:
+				/* Valid. */
+				/* FIXME: interface is not active anymore,
+				 * must remove it. */
+				break;
+
+			default:
+				return ERROR_EVILVALUE;
+		}
+
+		cntrl_table[indice]->status = novo_status;
+		return SUCCESS;
 	}
+
+	return ERROR_ISINACTIVE;
 }
 
 
