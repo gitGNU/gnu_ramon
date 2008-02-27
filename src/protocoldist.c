@@ -180,35 +180,45 @@ int pdist_control_busca_createtime(const unsigned int indice, uint32_t *uint_ptr
 }
 
 
-/*
- *  copy entry's owner string to the pointer to char pointer received
+/**
+ * Copy the owner string of the interface given by indice, to the destination
+ * buffer ptr.
+ *
+ * The size of buffer ptr is given by maximo.  If the string is longer than the
+ * buffer, it will be truncated to maximo-1 characters.  Returns the length of
+ * the string, or an error code in case of failure.
+ *
+ * \retval ERROR_NOSUCHENTRY	If interface indice does not exists.
+ * \retval ERROR_ISINACTIVE	If interface indice is not active.
+ * \retval int			If no errors occur, indicates how many characters
+ * 				were copied.
  */
-int pdist_control_busca_owner(const unsigned int indice, char *ptr,
+int
+pdist_control_busca_owner(const unsigned int indice, char *ptr,
 		const unsigned int maximo)
 {
 	unsigned int tamanho;
 
-	if (indice < PDISTCNTRL_TAM) {
-		if (cntrl_table[indice] != NULL) {
-			tamanho = strlen(cntrl_table[indice]->owner);
+	if (indice >= PDISTCNTRL_TAM)
+		return ERROR_NOSUCHENTRY;
 
-			if ((tamanho + 1) > maximo) {
-				/* buffer too small */
-				return 0;
-			}
+	if (cntrl_table[indice] != NULL ||
+			cntrl_table[indice]->rowstatus != ROWSTATUS_ACTIVE)
+		return ERROR_ISINACTIVE;
 
-			strncpy(ptr, cntrl_table[indice]->owner, tamanho);
-			ptr[tamanho] = '\0';
+	/* FIXME: should simply duplicate owner string, allocating a new char *
+	 * on behalf of the caller. */
+	tamanho = strlen(cntrl_table[indice]->owner);
 
-			return tamanho;
-		}
-		else {
-			return ERROR_ISINACTIVE;
-		}
+	if (tamanho > maximo) {
+		/* Buffer too small, truncate. */
+		tamanho = maximo - 1;
 	}
-	else {
-		return ERROR_EVILVALUE;
-	}
+
+	strncpy(ptr, cntrl_table[indice]->owner, tamanho);
+	ptr[tamanho] = '\0';
+
+	return tamanho;
 }
 
 
@@ -230,6 +240,7 @@ pdist_control_define_owner(const unsigned int indice, const char *owner_ptr)
 	if (indice >= PDISTCNTRL_TAM)
 		return ERROR_NOSUCHENTRY;
 
+	/* XXX: check if rowstatus should be checked indeed. */
 	if (cntrl_table[indice] == NULL ||
 			cntrl_table[indice]->rowstatus != ROWSTATUS_ACTIVE)
 		return ERROR_ISINACTIVE;
