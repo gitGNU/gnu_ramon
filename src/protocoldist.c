@@ -212,45 +212,44 @@ int pdist_control_busca_owner(const unsigned int indice, char *ptr,
 }
 
 
-/*
-   Altera o dono de uma entrada, cuidando para que o dono antigo não seja perdido
-   durante a alocação de memória. Se um erro ocorrer durante a alocação de memória,
-   o dono antigo é recolocado (por não ter sido desalocado).
-   */
-int pdist_control_define_owner(const unsigned int indice, const char *owner_ptr)
+/**
+ * Changes the owner of an interface, given by indice.
+ *
+ * In case of errors, the old value remains unaltered.
+ *
+ * \retval SUCCESS		If no errors occur.
+ * \retval ERROR_NOSUCHENTRY	If interface indice is not registered.
+ * \retval ERROR_ISINACTIVE	If interface indice is not active.
+ */
+int
+pdist_control_define_owner(const unsigned int indice, const char *owner_ptr)
 {
-	char    *salva_ptr;
-	int	    tamanho;
+	char	*salva_ptr;
+	int	 tamanho;
 
-	if (indice < PDISTCNTRL_TAM) {
-		if (cntrl_table[indice] != NULL) {
-			salva_ptr = cntrl_table[indice]->owner;
-
-			/* alocar espaço para o novo */
-			tamanho = strlen(owner_ptr);
-			cntrl_table[indice]->owner = malloc(tamanho + 1);
-			if (cntrl_table[indice]->owner == NULL) {
-				/* restaurar */
-				cntrl_table[indice]->owner = salva_ptr;
-
-				return ERROR_MALLOC;
-			}
-			else {
-				free(salva_ptr);
-			}
-
-			strncpy(cntrl_table[indice]->owner, owner_ptr, tamanho);
-			cntrl_table[indice]->owner[tamanho] = '\0';
-
-			return SUCCESS;
-		}
-		else {
-			return ERROR_ISINACTIVE;
-		}
-	}
-	else {
+	if (indice >= PDISTCNTRL_TAM)
 		return ERROR_NOSUCHENTRY;
+
+	if (cntrl_table[indice] == NULL ||
+			cntrl_table[indice]->rowstatus != ROWSTATUS_ACTIVE)
+		return ERROR_ISINACTIVE;
+
+	/* Duplicate string. */
+	salva_ptr = cntrl_table[indice]->owner;
+	tamanho = strlen(owner_ptr);
+
+	cntrl_table[indice]->owner = malloc(tamanho + 1);
+	if (cntrl_table[indice]->owner == NULL) {
+		/* Failed, restore old string. */
+		cntrl_table[indice]->owner = salva_ptr;
+		return ERROR_MALLOC;
 	}
+
+	strncpy(cntrl_table[indice]->owner, owner_ptr, tamanho);
+	cntrl_table[indice]->owner[tamanho] = '\0';
+	free(salva_ptr);
+
+	return SUCCESS;
 }
 
 
