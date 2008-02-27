@@ -87,22 +87,23 @@ unsigned int pdist_control_busca_maximo()
 }
 
 
-/*
-   apenas testa se uma entrada é acessível
-   */
-int pdist_control_testa(const unsigned int indice)
+/**
+ * Tests if a given interface indice exists.
+ *
+ * \retval SUCCESS		If no errors occured.
+ * \retval ERROR_NOSUCHENTRY	If interface indice does not exist.
+ * \retval ERROR_ISINACTIVE	If interface indice is not registered.
+ */
+int
+pdist_control_testa(const unsigned int indice)
 {
-	if (indice < PDISTCNTRL_TAM) {
-		if (cntrl_table[indice] != NULL) {
-			return SUCCESS;
-		}
-		else {
-			return ERROR_ISINACTIVE;
-		}
-	}
-	else {
+	if (indice >= PDISTCNTRL_TAM)
 		return ERROR_NOSUCHENTRY;
-	}
+
+	if (cntrl_table[indice] == NULL)
+		return ERROR_ISINACTIVE;
+
+	return SUCCESS;
 }
 
 
