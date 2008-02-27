@@ -203,7 +203,7 @@ pdist_control_busca_owner(const unsigned int indice, char *ptr,
 		return ERROR_NOSUCHENTRY;
 
 	if (cntrl_table[indice] != NULL ||
-			cntrl_table[indice]->rowstatus != ROWSTATUS_ACTIVE)
+			cntrl_table[indice]->status != ROWSTATUS_ACTIVE)
 		return ERROR_ISINACTIVE;
 
 	/* FIXME: should simply duplicate owner string, allocating a new char *
@@ -242,7 +242,7 @@ pdist_control_define_owner(const unsigned int indice, const char *owner_ptr)
 
 	/* XXX: check if rowstatus should be checked indeed. */
 	if (cntrl_table[indice] == NULL ||
-			cntrl_table[indice]->rowstatus != ROWSTATUS_ACTIVE)
+			cntrl_table[indice]->status != ROWSTATUS_ACTIVE)
 		return ERROR_ISINACTIVE;
 
 	/* Duplicate string. */
