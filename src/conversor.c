@@ -123,7 +123,7 @@ static char owner[] = "monitor";
 static fila_t		fila[FILA_MAX];   /* o vetor de pacotes */
 
 static pthread_mutex_t	fila_pthmutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_t	thr_captura;
+static pthread_t	thr_sniffer;
 static sem_t		fila_semaforo;		/* semáforo para proteger fila_tam */
 
 
@@ -152,20 +152,19 @@ static void fila_info()
    função para uma thread:
    fica eternamente tentando coletar pacotes, não retorna
  */
-static void *fila_coleta()
+static void
+*sniff()
 {
-	char			erro_pcap_string[PCAP_ERRBUF_SIZE] = {'\0',};
-	struct pcap_pkthdr	header;
-
+	char			 erro_pcap_string[PCAP_ERRBUF_SIZE];
+	struct pcap_pkthdr	 header;
+	const u_char		*data_ptr;
+	pcap_t			*captura;
 #ifdef __linux__
-	struct sched_param	schedparams;
-	int			policy;
+	struct sched_param	 schedparams;
+	int			 policy;
 #endif
 
-	const u_char	*data_ptr;
-	pcap_t		*captura;
-
-	Debug("pid %d", getpid());
+	Debug("sniffer has TID %p", pthread_self());
 
 	/* We'll ask for SCHED_RR scheduling policy */
 #ifdef __linux__
@@ -186,7 +185,7 @@ static void *fila_coleta()
 	   sem (-1) timeout de leitura */
 	dev = conf_get_interface();
 	if (dev == NULL) {
-		Debug("error while trying to open network interface");
+		Debug("error while trying to open network interface `%s'", dev);
 		return (void *)ERROR_IO;
 	}
 	Debug("opening network device `%s' for capture", dev);
@@ -228,16 +227,12 @@ static void *fila_coleta()
 				/* "avisar" chegada de pacote */
 				sem_post(&fila_semaforo);
 			}
-			else {
+			else
 				/* fila cheia */
 				fila_descartes++;
-				//		sched_yield();
-			}
-
 #if FILA_DEBUG
 			fila_info();
 #endif
-
 		}
 	}
 }
@@ -595,7 +590,8 @@ static int pkt_process(pedb_t *dados)
 
 /* function that manage the conversion of entries of conexao table (DB cap_pac)
    to the tables of DB RMON2 */
-void *captura_processa_pacote()
+void *
+captura_processa_pacote()
 {
 #if MEDIR_DESEMPENHO
 	uint64_t	    ticks_ini;
@@ -607,10 +603,9 @@ void *captura_processa_pacote()
 
 	static const uint32_t AGUARDAR = 1000;
 #endif
-
 	pedb_t	    prepacote;
 
-	Debug("pid %d", getpid());
+	Debug("accounter has TID %p", pthread_self());
 
 #if MEDIR_DESEMPENHO
 	arq_ptr = fopen("/tmp/conversor.data", "w");
@@ -625,7 +620,7 @@ void *captura_processa_pacote()
 		return (void *)ERROR_PKTQUEUE;
 	}
 
-	if (pthread_create(&thr_captura, NULL, fila_coleta, NULL) != 0) {
+	if (pthread_create(&thr_sniffer, NULL, sniff, NULL) != 0) {
 		perror("pthread_create");
 		return (void *)ERROR_THREAD;
 	}
