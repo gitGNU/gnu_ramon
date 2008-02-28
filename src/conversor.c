@@ -190,7 +190,7 @@ static void
 	}
 	Debug("opening network device `%s' for capture", dev);
 #ifdef __FreeBSD__
-	captura = pcap_open_live(dev, FILA_SNAPLEN, 1, 1000, erro_pcap_string);
+	captura = pcap_open_live(dev, FILA_SNAPLEN, 1, 100, erro_pcap_string);
 #endif
 #ifdef __linux__
 	captura = pcap_open_live(dev, FILA_SNAPLEN, 1, -1, erro_pcap_string);
