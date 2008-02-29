@@ -1,0 +1,114 @@
+2008-02-28  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* src/conversor.c: Using 100 ms as socket timeout for FreeBSD.
+
+2008-02-28  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* src/conversor.c: Random cleanups.
+
+2008-02-26  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* src/protocoldist.c: Refactoring, again.
+
+2008-02-26  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* src/protocoldist.c: Oops, protocolDist uses status, not rowstatus.
+
+2008-02-26  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* src/protocoldist.c: Yet more refactoring.
+
+2008-02-26  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* src/protocoldist.c: More refactoring.
+
+2008-02-26  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* src/protocoldist.c: Refactoring.
+
+2008-02-26  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* src/protocoldist.c: Removing bogus comments and static
+	initializers.
+
+2008-02-26  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* include/protocoldist.h: 2008.
+
+2008-02-26  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* include/protocoldist.h, src/conversor.c, src/protocoldist.c:
+	Facelifting.
+
+2008-02-26  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* module/rmon2.c: Typo.
+
+2008-02-26  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* module/rmon2.c: Fixing indentation.
+
+2008-02-26  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* src/hlmatrix.c: Removing unnecessary elses; adding notes,
+	improving some messages.
+
+2008-02-26  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* include/conversor.h, module/protocolDist.c, src/conversor.c,
+	src/rmon2_main.c: Renaming some important functions inside the
+	snifferm update users accordingly.
+
+2008-02-25  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* include/log.h, src/conversor.c, src/log.c: Add support to Error(),
+	a logger that will terminate the program after printing the message
+	(exitting with EXIT_FAILURE).
+
+2008-02-24  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* src/protocoldir.c: Small changes (style and less code).
+
+2008-02-24  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* src/log.c: Improve formating; should use vfprintf() instead of
+	fprintf().
+
+2008-02-22  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* Makefile: It is 2008 already.
+
+2008-02-22  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* include/log.h, src/alhost.c, src/almatrix_DS.c,
+	src/almatrix_SD.c, src/client.c, src/conversor.c, src/hlhost.c,
+	src/log.c: Final changes in order to use the new stdarg-based
+	logger.  Some messages were improved in the course of changes, too.
+
+2008-02-20  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* Makefile, include/log.h, src/log.c: stdarg-based logging.
+	Binaries are much smaller now (20-40%).
+
+2008-02-19  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* src/client.c: Although .text got bigger:   * Add support for new debugging wrappers (which will be improved).    * Improve some messages.
+
+2008-02-18  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* include/log.h, src/alhost.c, src/almatrix_DS.c,
+	src/almatrix_SD.c, src/hlhost.c, src/hlmatrix.c, src/nlhost.c,
+	src/nlmatrix_DS.c, src/nlmatrix_SD.c, src/protocoldir.c,
+	src/protocoldist.c, src/rmon2_main.c, src/servidor.c, src/tracos.c:
+	Including log.h, a simple macro-based logging infra-structure.  Also
+	change most of source files to use it.
+
+2007-09-24  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* src/protocoldir.c: * A few indents.  * Removing static initializers, to reduce .DATA section.
+
+2007-09-23  Ricardo Nabinger Sanchez <rnsanchez@wait4.org>
+
+	* Importing sources from CVS tag rmon2_0_3_0pre9 into the git
+	repository.
+

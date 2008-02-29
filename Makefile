@@ -173,7 +173,7 @@ APP_OBJECTS	= $(SRC_DIR)/alhost.o \
 # This instructs make to not try implicit rules for these targets, reducing
 # (a lot!) make's debug-enabled output
 #
-.PHONY: all app checkdep clean client default dep_pcap dep_snmp distclean doc help install install.suid Makefile module naormon test testar_suid uninstall
+.PHONY: all app changelog checkdep clean client default dep_pcap dep_snmp distclean doc help install install.suid Makefile module naormon test testar_suid uninstall
 
 #
 # In case no target is specified, this will behave like the default one
@@ -346,3 +346,6 @@ uninstall:
 	rm -f $(INSTALL_ETC)/protocoldir.conf
 	rmdir $(INSTALL_ETC)
 
+changelog:
+	git log --pretty --numstat --summary | git2cl > ChangeLog
+	sed -i '' -E -e 's/[[:space:]]+$$//g' ChangeLog
